@@ -14,3 +14,7 @@ Este repositório contém os arquivos relacionados ao desenvolvimento do **Traba
 | Integração da plataforma HIL           |     |     |     |     | x   | x   | x   |     |     |     |
 | Testes experimentais e validação       |     |     |     |     |     |     | x   | x   | x   |     |
 | Redação do TCC                         | x   | x   | x   | x   | x   | x   | x   | x   | x   | x   |
+
+## Links Úteis
+- Overleaf UTFPR: https://overleaf.utfpr.edu.br
+- Gerador de tabelas em LaTeX: http://www.tablesgenerator.com/
