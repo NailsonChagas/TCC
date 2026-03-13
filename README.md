@@ -21,3 +21,4 @@ Este repositório contém os arquivos relacionados ao desenvolvimento do **Traba
 ## Links Úteis
 - Overleaf UTFPR: https://overleaf.utfpr.edu.br
 - Gerador de tabelas em LaTeX: http://www.tablesgenerator.com/
+- Cronograma 2026: https://docs.google.com/spreadsheets/d/1tQWgMMLozgILDeVnB5VIZ9kB2jKmFWJD35fojq2DE-4/edit?usp=sharing
