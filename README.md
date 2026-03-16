@@ -15,9 +15,6 @@ Este repositório contém os arquivos relacionados ao desenvolvimento do **Traba
 | Testes experimentais e validação       |     |     |     |     |     |     | x   | x   | x   |     |
 | Redação do TCC                         | x   | x   | x   | x   | x   | x   | x   | x   | x   | x   |
 
-## Trabalhos Relacionados
-1. **Cost-effective and versatile Hardware-in-the-Loop system for DC/DC converter emulation in education and research**: https://www.hardware-x.com/article/S2468-0672(25)00079-3/fulltext e https://pubmed.ncbi.nlm.nih.gov/41048586/
-
 ## Links Úteis
 - Overleaf UTFPR: https://overleaf.utfpr.edu.br
 - Gerador de tabelas em LaTeX: http://www.tablesgenerator.com/
