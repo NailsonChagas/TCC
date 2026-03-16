@@ -16,7 +16,8 @@ Este repositório contém os arquivos relacionados ao desenvolvimento do **Traba
 | Redação do TCC                         | x   | x   | x   | x   | x   | x   | x   | x   | x   | x   |
 
 ## Links Úteis
-- Overleaf UTFPR: https://overleaf.utfpr.edu.br
-- Gerador de tabelas em LaTeX: http://www.tablesgenerator.com/
-- Link do repositório com TCCs já concluídos no curso: https://repositorio.utfpr.edu.br/jspui/handle/1/5671
-- Cronograma 2026: https://docs.google.com/spreadsheets/d/1tQWgMMLozgILDeVnB5VIZ9kB2jKmFWJD35fojq2DE-4/edit?usp=sharing
+
+- Acesse o [Overleaf da UTFPR](https://overleaf.utfpr.edu.br)
+- Utilize o [gerador de tabelas em LaTeX](http://www.tablesgenerator.com/)
+- Consulte o [repositório de TCCs já concluídos no curso](https://repositorio.utfpr.edu.br/jspui/handle/1/5671)
+- Veja o [cronograma de TCC 2026](https://docs.google.com/spreadsheets/d/1tQWgMMLozgILDeVnB5VIZ9kB2jKmFWJD35fojq2DE-4/edit?usp=sharing)
