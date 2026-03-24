@@ -15,6 +15,22 @@ Este repositório contém os arquivos relacionados ao desenvolvimento do **Traba
 | Testes experimentais e validação       |     |     |     |     |     |     | x   | x   | x   |     |
 | Redação do TCC                         | x   | x   | x   | x   | x   | x   | x   | x   | x   | x   |
 
+## Referências
+- [Modelling and Control of a Buck Converter Using State-Space Averaging and Classical Feedback Techniques](https://arxiv.org/abs/2507.09115)
+- [State space averaging technique of power converter with digital PID controller](https://ieeexplore.ieee.org/document/5395907)
+- [Aplicação do Modelo Linear de Vorpérian ao Conversor tipo Buck](https://www.eletrica.ufpr.br/mehl/downloads/modelamento-buck.pdf)
+- [What is the switching transfer function?](https://techweb.rohm.com/product/opamps-arithmetic-circuits/transfer-function/12526/)
+- ELETRÔNICA de POTÊNCIA: Dispositivos, circuitos e aplicações (versão em PDF em anexo)
+- [Hardware-in-the-Loop Simulations: A Historical Overview of Engineering Challenges](https://www.mdpi.com/2079-9292/11/15/2462)
+- [Hardware in the Loop Real-time Simulation for the Associated Discrete Circuit Modeling Optimization Method of Power Converters](https://www.mdpi.com/1996-1073/11/11/3237)
+- [Testing Embedded Software: A Survey of the Literature](https://www.sciencedirect.com/science/article/pii/S0950584918301265)
+- [Model-Driven Engineering in Education](https://ieeexplore.ieee.org/document/8624724)
+- [Model-Based System Design for MIL, SIL, and HIL](https://www.mdpi.com/2032-6653/5/4/1121)
+- [A Rapid Review on Advanced Software-in-the-Loop Methods for Automotive Software Verification](https://sol.sbc.org.br/index.php/sast/article/view/30216)
+- [A Model-Based Design and Verification Framework for Virtual ECUs in Automotive Seat Control Systems](https://www.mdpi.com/2079-9292/15/3/569)
+- [Consistent Test Reuse Across MIL → SIL → HIL in a Model-Driven Development Workflow (Siemens)](https://www.plm.automation.siemens.com/media/global/cz/Siemens-SW-Consistent-test-reuse-across-MIL-White-Paper_tcm84-98441.pdf)
+- [X-in-the-Loop Methodology for Proton Exchange Membrane Fuel Cell Systems Design: Review of Advances and Challenges](https://www.mdpi.com/1996-1073/18/14/3774)
+
 ## Links Úteis
 
 - Acesse o [Overleaf da UTFPR](https://overleaf.utfpr.edu.br)
