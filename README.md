@@ -34,7 +34,6 @@ Este repositório contém os arquivos relacionados ao desenvolvimento do **Traba
 - [Real-Time Hardware-In-The-Loop (HIL) Testing for Power Electronics Controllers](https://ieeexplore.ieee.org/document/6307219)
 - [State space averaging technique of power converter with digital PID controller](https://ieeexplore.ieee.org/document/5395907)
 - [Testing Embedded Software: A Survey of the Literature](https://www.sciencedirect.com/science/article/pii/S0950584918301265)
-- [What is the switching transfer function?](https://techweb.rohm.com/product/opamps-arithmetic-circuits/transfer-function/12526/)
 - [X-in-the-Loop Methodology for Proton Exchange Membrane Fuel Cell Systems Design: Review of Advances and Challenges](https://www.mdpi.com/1996-1073/18/14/3774)
 
 ## Links Úteis

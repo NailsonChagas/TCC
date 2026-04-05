@@ -1,0 +1,261 @@
+% A Model-Based Design and Verification Framework for Virtual ECUs in Automotive Seat Control Systems
+@Article{electronics15030569,
+    AUTHOR = {Yang, Anna and Han, Woo Jin and Cho, Hyun Suk and Koh, Dong-Woo and Kim, Jae-Gon},
+    TITLE = {A Model-Based Design and Verification Framework for Virtual ECUs in Automotive Seat Control Systems},
+    JOURNAL = {Electronics},
+    VOLUME = {15},
+    YEAR = {2026},
+    NUMBER = {3},
+    ARTICLE-NUMBER = {569},
+    URL = {https://www.mdpi.com/2079-9292/15/3/569},
+    ISSN = {2079-9292},
+    ABSTRACT = {As automotive software continues to grow in scale and timing sensitivity, hardware-independent verification in the early design phase has become increasingly important—especially for safety-critical, body-domain controllers. This study proposes a framework that integrates MBD (Model-Based Design), AUTOSAR (Automotive Open System Architecture) Classic Platform configuration, and vECU (Virtual Electronic Control Unit) execution into a single, repeatable development workflow. Control logic validated in Simulink is translated into AUTOSAR-compliant software, built into a QEMU (Quick EMUlator)-based vECU, and exercised in DRIM-SimHub using both virtual stimuli and a real sensor–actuator signal delivered through a dedicated I/O interface board. Using a seat–slide virtual limit controller as a representative case, the proposed workflow enables consistent reuse of the test scenarios across model-in-the-loop (MiL), software-in-the-loop (SiL), and virtual ECU stages, while preserving production-level timing behavior and the semantics of the AUTOSAR runtime. The experimental results show that the vECU accurately reproduces the PWM outputs, Hall sensor pulse timing, and limit–stop decisions of physical ECU, and that integration issues previously discovered only in HiL tests can be exposed much earlier. Overall, the workflow shortens verification cycles, improves the observability of timing-dependent behavior, and provides a practical basis for early validation in software-defined vehicle development.},
+    DOI = {10.3390/electronics15030569}
+}
+
+% A Rapid Review on Advanced Software-in-the-Loop Methods for Automotive Software Verification
+@inproceedings{sast,
+    author = {Larissa Pestana and Breno Miranda},
+    title = { A Rapid Review on Advanced Software-in-the-Loop Methods for Automotive Software Verification},
+    booktitle = {Anais do IX Simpósio Brasileiro de Testes de Software Sistemático e Automatizado},
+    location = {Curitiba/PR},
+    year = {2024},
+    keywords = {},
+    issn = {0000-0000},
+    pages = {56--65},
+    publisher = {SBC},
+    address = {Porto Alegre, RS, Brasil},
+    doi = {10.5753/sast.2024.3883},
+    url = {https://sol.sbc.org.br/index.php/sast/article/view/30216}
+}
+
+% Aplicação do Modelo Linear de Vorpérian ao Conversor tipo Buck
+@misc{mehl_modelamento_buck,
+    author       = {Ewaldo L. M. Mehl},
+    title        = {Aplicação do Modelo Linear de {Vorpérian} ao Conversor tipo {Buck}},
+    howpublished = {Material didático, Universidade Federal do Paraná (UFPR)},
+    year         = {2026}, % Ano de acesso ou disponibilização
+    url          = {https://www.eletrica.ufpr.br/mehl/downloads/modelamento-buck.pdf},
+    note         = {Acessado em: 5 abr. 2026}
+}
+
+% Consistent Test Reuse Across MIL → SIL → HIL in a Model-Driven Development Workflow (Siemens)
+@techreport{siemens_test_reuse_2020,
+    author      = {Lance Brooks},
+    title       = {Consistent test reuse across {MIL} $\rightarrow$ {SIL} $\rightarrow$ {HIL} in a model-driven development workflow},
+    institution = {Siemens Digital Industries Software},
+    year        = {2020},
+    url         = {https://www.siemens.com/autosar},
+    type        = {White Paper},
+    number      = {81432-C4 6/20 N}
+}
+
+% Cost-effective and versatile Hardware-in-the-Loop system for DC/DC converter emulation in education and research
+@Article{Gaviria-Cano2025,
+    author={Gaviria-Cano, Alejandro
+    and Escudero-Quintero, Cristian
+    and L{\'o}pez-Su{\'a}rez, Jose David
+    and Villegas-Ceballos, Juan Pablo
+    and Henao-Bravo, Elkin Edilberto
+    and Serna-Garc{\'e}s, Sergio Ignacio},
+    title={Cost-effective and versatile Hardware-in-the-Loop system for DC/DC converter emulation in education and research},
+    journal={HardwareX},
+    year={2025},
+    month={Dec},
+    day={01},
+    publisher={Elsevier},
+    volume={24},
+    abstract={This work presents a cost-effective, versatile hardware-in-the-loop (HIL) system for non-isolated DC/DC converter emulation. The system emulates five types of converters (Buck, Boost, Buck-Boost, Cuk, and SEPIC) and targets educational and research applications. The hardware uses an ARM Cortex M7 microcontroller to perform real-time calculations and produce analog signals that emulate the behavior of the converters. Its economical, compact, and modular design is optimized to facilitate use in educational environments and research projects with limited resources. Additionally, the system includes software that enables automatic configuration of the code necessary for emulation, offering flexibility while reducing costs and complexity},
+    issn={2468-0672},
+    doi={10.1016/j.ohx.2025.e00701},
+    url={https://doi.org/10.1016/j.ohx.2025.e00701}
+}
+
+% ELETRÔNICA de POTÊNCIA: Dispositivos, circuitos e aplicações
+@book{rashid2014eletronica,
+    author    = {Muhammad H. Rashid},
+    title     = {Eletrônica de Potência: Dispositivos, Circuitos e Aplicações},
+    publisher = {Pearson},
+    year      = {2014},
+    address   = {São Paulo},
+    edition   = {4},
+    isbn      = {978-8543005942}
+}
+
+% Hardware Emulation of Step-Down Converter Power Stages for Digital Control Design 
+@Article{electronics12061328,
+    AUTHOR = {Kirei, Botond Sandor and Farcas, Calin-Adrian and Chira, Cosmin and Ilie, Ionut-Alin and Neag, Marius},
+    TITLE = {Hardware Emulation of Step-Down Converter Power Stages for Digital Control Design},
+    JOURNAL = {Electronics},
+    VOLUME = {12},
+    YEAR = {2023},
+    NUMBER = {6},
+    ARTICLE-NUMBER = {1328},
+    URL = {https://www.mdpi.com/2079-9292/12/6/1328},
+    ISSN = {2079-9292},
+    ABSTRACT = {This paper proposes a methodology of delivering the emulation hardware of several step-down converter power stages. The generalized emulator design methodology follows these steps: first, the power stage is described using an ordinary differential equation system; second, the ordinary differential equation system is solved using Euler’s method, and thus an accurate time-domain model is obtained; next, this time-domain model can be described using either general-purpose programming language (MATLAB, C, etc.) or hardware description language (VHDL, Verilog, etc.). As a result, the emulator has been created; validation of the emulator may be carried out by comparing it to SPICE transient simulations. Finally, the validated emulator can be implemented on the preferred target technology, either in a general-purpose processor or a field programmable gate array. As the emulator relies on the ordinary differential equation system of the power stage, it has better behavioral accuracy than the emulators based on average state space models. Moreover, this paper also presents the design methodology of a manually tuned proportional–integrative–derivative controller deployed on a field programmable gate array.},
+    DOI = {10.3390/electronics12061328}
+}
+
+% Hardware in the Loop Real-time Simulation for the Associated Discrete Circuit Modeling Optimization Method of Power Converters
+@Article{en11113237,
+    AUTHOR = {Guo, Xizheng and Yuan, Jiaqi and Tang, Yiguo and You, Xiaojie},
+    TITLE = {Hardware in the Loop Real-time Simulation for the Associated Discrete Circuit Modeling Optimization Method of Power Converters},
+    JOURNAL = {Energies},
+    VOLUME = {11},
+    YEAR = {2018},
+    NUMBER = {11},
+    ARTICLE-NUMBER = {3237},
+    URL = {https://www.mdpi.com/1996-1073/11/11/3237},
+    ISSN = {1996-1073},
+    ABSTRACT = {Due to the complicated circuit topology and high switching frequency, field-programmable gate arrays (FPGA) can stand up to the challenges for the hardware in the loop (HIL) real-time simulation of power electronics converters. The Associated Discrete Circuit (ADC) modeling method, which has a fixed admittance matrix, greatly reduces the computation cost for FPGA. However, the oscillations introduced by the switch-equivalent model reduces the simulation accuracy. In this paper, firstly, a novel algorithm is proposed to determine the optimal discrete-time switch admittance parameter, Gs, which is obtained by minimizing the switching loss. Secondly, the FPGA resource optimization method, in which the simulation time step, bit-length, and model precision are taken into consideration, is presented when the power electronics converter is implemented in FPGA. Finally, the above method is validated on the topology of a three-phase inverter with LC filters. The HIL simulation and practicality experiments verify the effect of FPGA resource optimization and the validity of the ADC modeling method, respectively.},
+    DOI = {10.3390/en11113237}
+}
+
+% Hardware-in-the-loop simulation for the design and testing of engine-control systems
+@article{ISERMANN1999643,
+    title = {Hardware-in-the-loop simulation for the design and testing of engine-control systems},
+    journal = {Control Engineering Practice},
+    volume = {7},
+    number = {5},
+    pages = {643-653},
+    year = {1999},
+    issn = {0967-0661},
+    doi = {https://doi.org/10.1016/S0967-0661(98)00205-6},
+    url = {https://www.sciencedirect.com/science/article/pii/S0967066198002056},
+    author = {R. Isermann and J. Schaffnit and S. Sinsel},
+    keywords = {Real-time simulation, Hardware-in-the-loop simulation, Diesel engines, Turbochargers, Vehicle dynamics, Transputers, Digital signal processors, Simulator testbenches},
+    abstract = {For the design, implementation and testing of control systems hardware-in-the-loop (HIL) simulation is increasingly being required, where some of the control-loop components are real hardware, and some are simulated. Usually, a process is simulated because it is not available (simultaneous engineering), or because experiments with the real process are too costly or require too much time. The real-time requirements for such simulations depend on the time-scale of the process and the simulated components involved. This paper gives, first, an overview of the various kinds of real-time and HIL simulation. Then, two cases are considered. First, HIL simulation for relatively slow processes, like those in basic industries or heating systems, is discussed. Then, the HIL simulation of combustion engines is shown in detail. The required models are described. Comparisons between real-time simulations and measurements on real diesel engines and trucks are shown. The goal of the HIL system is to develop new control algorithms and to investigate the effect of faults, both in sensors and actuators, and the engine itself.}
+}
+
+% Hardware-in-the-Loop Simulations: A Historical Overview of Engineering Challenges
+@Article{electronics11152462,
+    AUTHOR = {Mihalič, Franc and Truntič, Mitja and Hren, Alenka},
+    TITLE = {Hardware-in-the-Loop Simulations: A Historical Overview of Engineering Challenges},
+    JOURNAL = {Electronics},
+    VOLUME = {11},
+    YEAR = {2022},
+    NUMBER = {15},
+    ARTICLE-NUMBER = {2462},
+    URL = {https://www.mdpi.com/2079-9292/11/15/2462},
+    ISSN = {2079-9292},
+    ABSTRACT = {The design of modern industrial products is further improved through the hardware-in-the-loop (HIL) simulation. Realistic simulation is enabled by the closed loop between the hardware under test (HUT) and real-time simulation. Such a system involves a field programmable gate array (FPGA) and digital signal processor (DSP). An HIL model can bypass serious damage to the real object, reduce debugging cost, and, finally, reduce the comprehensive effort during the testing. This paper provides a historical overview of HIL simulations through different engineering challenges, i.e., within automotive, power electronics systems, and different industrial drives. Various platforms, such as National Instruments, dSPACE, Typhoon HIL, or MATLAB Simulink Real-Time toolboxes and Speedgoat hardware systems, offer a powerful tool for efficient and successful investigations in different fields. Therefore, HIL simulation practice must begin already during the university’s education process to prepare the students for professional engagements in the industry, which was also verified experimentally at the end of the paper.},
+    DOI = {10.3390/electronics11152462}
+}
+
+% Model-Based System Design for MIL, SIL, and HIL
+@Article{wevj5041121,
+    AUTHOR = {Nibert, Jonathan and Herniter, Marc E. and Chambers, Zachariah},
+    TITLE = {Model-Based System Design for MIL, SIL, and HIL},
+    JOURNAL = {World Electric Vehicle Journal},
+    VOLUME = {5},
+    YEAR = {2012},
+    NUMBER = {4},
+    PAGES = {1121--1130},
+    URL = {https://www.mdpi.com/2032-6653/5/4/1121},
+    ISSN = {2032-6653},
+    ABSTRACT = {Rose-Hulman is competing in EcoCAR2, a three year competition where teams design, build, and test a hybridvehicle architecture. Teams are required to generate vehicle models that will be used throughout the life of the competition. The model is used to choose a hybrid architecture, design a robust control scheme, implement fault mitigation strategies, and optimize vehicle performance. Modelling techniques include Model-in-the- Loop, Software-in-the-Loop, and Hardware-in-the-Loop. This paper will discuss the techniques developed to build a model that can be actively used for the life of the three year competition and maintained across the MIL, SIL, and HIL modelling levels.},
+    DOI = {10.3390/wevj5041121}
+}
+
+% Model-Driven Engineering in Education
+@INPROCEEDINGS{8624724,
+    author={Samiee, Amir and Tiefnig, Nicolas and Sahu, Jidu P. and Wagner, Michael and Baumgartner, Andreas and Juhász, László},
+    booktitle={2018 18th International Conference on Mechatronics - Mechatronika (ME)}, 
+    title={Model-Driven-Engineering in Education}, 
+    year={2018},
+    volume={},
+    number={},
+    pages={1-6},
+    keywords={Torque;Computational modeling;Testing;Valves;Transfer functions;Frequency-domain analysis;Position measurement;Mechatronics;Education;Throttle-Valve;Model-Based-Design;Position Control;Rapid Control Prototyping;X-in-the-Loop;FPGA},
+    doi={}
+}
+
+% Modelling and Control of a Buck Converter Using State-Space Averaging and Classical Feedback Techniques
+@misc{nwachukwu2025modellingcontrolbuckconverter,
+    title={Modelling and Control of a Buck Converter Using State-Space Averaging and Classical Feedback Techniques}, 
+    author={Sampson E. Nwachukwu},
+    year={2025},
+    eprint={2507.09115},
+    archivePrefix={arXiv},
+    primaryClass={eess.SY},
+    url={https://arxiv.org/abs/2507.09115}
+}
+
+% Modern Control Engineering 5ed
+@BOOK{Ogata2009-pa,
+    title     = "Modern Control Engineering",
+    author    = "Ogata, Katsuhiko",
+    publisher = "Pearson",
+    edition   =  5,
+    month     =  aug,
+    year      =  2009,
+    isbn      = {978-0136156734}, 
+    address   = "Upper Saddle River, NJ"
+}
+
+% Real-Time Hardware-In-The-Loop (HIL) Testing for Power Electronics Controllers
+@INPROCEEDINGS{6307219,
+    author={Cha, Seung Tae and Wu, Qiuwei and Nielsen, Arne Hejde and Østergaard, Jacob and Park, In Kwon},
+    booktitle={2012 Asia-Pacific Power and Energy Engineering Conference}, 
+    title={Real-Time Hardware-In-The-Loop (HIL) Testing for Power Electronics Controllers}, 
+    year={2012},
+    volume={},
+    number={},
+    pages={1-6},
+    keywords={Inverters;Pulse width modulation;Digital signal processing;Voltage control;Real time systems;Bridge circuits},
+    doi={10.1109/APPEEC.2012.6307219}
+}
+
+% State space averaging technique of power converter with digital PID controller
+@INPROCEEDINGS{5395907,
+    author={Tajuddin, M. F. N. and Rahim, N. A. and Daut, I. and Ismail, B. and Mohammed, M. F.},
+    booktitle={TENCON 2009 - 2009 IEEE Region 10 Conference}, 
+    title={State space averaging technique of power converter with digital PID controller}, 
+    year={2009},
+    volume={},
+    number={},
+    pages={1-6},
+    keywords={State-space methods;Three-term control;Digital control;DC-DC power converters;Pi control;Proportional control;Buck converters;Signal processing algorithms;Digital signal processors;Digital signal processing;State-space averaging technique;digital PID controller;buck converter},
+    doi={10.1109/TENCON.2009.5395907}
+}
+
+% Testing Embedded Software: A Survey of the Literature
+@article{GAROUSI201814,
+    title = {Testing embedded software: A survey of the literature},
+    journal = {Information and Software Technology},
+    volume = {104},
+    pages = {14-45},
+    year = {2018},
+    issn = {0950-5849},
+    doi = {https://doi.org/10.1016/j.infsof.2018.06.016},
+    url = {https://www.sciencedirect.com/science/article/pii/S0950584918301265},
+    author = {Vahid Garousi and Michael Felderer and Çağrı Murat Karapıçak and Uğur Yılmaz},
+    keywords = {Software testing, Embedded systems, Embedded software, Systematic mapping, Systematic literature mapping, Systematic literature review},
+    abstract = {Context
+    Embedded systems have overwhelming penetration around the world. Innovations are increasingly triggered by software embedded in automotive, transportation, medical-equipment, communication, energy, and many other types of systems. To test embedded software in an effective and efficient manner, a large number of test techniques, approaches, tools and frameworks have been proposed by both practitioners and researchers in the last several decades.
+    Objective
+    However, reviewing and getting an overview of the entire state-of-the-art and the –practice in this area is challenging for a practitioner or a (new) researcher. Also unfortunately, as a result, we often see that many companies reinvent the wheel (by designing a test approach new to them, but existing in the domain) due to not having an adequate overview of what already exists in this area.
+    Method
+    To address the above need, we conducted and report in this paper a systematic literature review (SLR) in the form of a systematic literature mapping (SLM) in this area. After compiling an initial pool of 588 papers, a systematic voting about inclusion/exclusion of the papers was conducted among the authors, and our final pool included 312 technical papers.
+    Results
+    Among the various aspects that we aim at covering, our review covers the types of testing topics studied, types of testing activity, types of test artifacts generated (e.g., test inputs or test code), and the types of industries in which studies have focused on, e.g., automotive and home appliances. Furthermore, we assess the benefits of this review by asking several active test engineers in the Turkish embedded software industry to review its findings and provide feedbacks as to how this review has benefitted them.
+    Conclusion
+    The results of this review paper have already benefitted several of our industry partners in choosing the right test techniques / approaches for their embedded software testing challenges. We believe that it will also be useful for the large world-wide community of software engineers and testers in the embedded software industry, by serving as an “index” to the vast body of knowledge in this important area. Our results will also benefit researchers in observing the latest trends in this area and for identifying the topics which need further investigations.}
+}
+
+% X-in-the-Loop Methodology for Proton Exchange Membrane Fuel Cell Systems Design: Review of Advances and Challenges 
+@Article{en18143774,
+    AUTHOR = {Lambert, Hugo and Hernàndez-Torres, David and Retière, Clément and Garnier, Laurent and Poirot-Crouvezier, Jean-Philippe},
+    TITLE = {X-in-the-Loop Methodology for Proton Exchange Membrane Fuel Cell Systems Design: Review of Advances and Challenges},
+    JOURNAL = {Energies},
+    VOLUME = {18},
+    YEAR = {2025},
+    NUMBER = {14},
+    ARTICLE-NUMBER = {3774},
+    URL = {https://www.mdpi.com/1996-1073/18/14/3774},
+    ISSN = {1996-1073},
+    ABSTRACT = {Proton Exchange Membrane Fuel Cells (PEMFCs) are seen as an alternative for heavy-duty transportation electrification. Powered by a green hydrogen source, they can provide high efficiency and low carbon emissions compared to traditional fuels. However, to be competitive, these systems require high reliability when operated in real-life conditions, as well as safe and efficient operating management. In order to achieve these goals, the X-in-the-loop (also called model-based design) methodology is well suited. It has been largely adopted for PEMFC system development and optimisation, as they are complex multi-component systems. In this paper, a systematic analysis of the scientific literature is conducted to review the methodology implementation for the design and improvement of the PEMFC systems. It exposes a precise definition of each development step in the methodology. The analysis shows that it can be employed in different ways, depending on the subsystems considered and the objectives sought. Finally, gaps in the literature and technical challenges for fuel cell systems that should be addressed are identified.},
+    DOI = {10.3390/en18143774}
+}
+
