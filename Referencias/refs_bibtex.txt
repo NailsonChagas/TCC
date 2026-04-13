@@ -194,6 +194,17 @@
     address   = "Upper Saddle River, NJ"
 }
 
+%Power Electronics
+@BOOK{Hart2010-qc,
+  title     = "Power Electronics",
+  author    = "Hart, Daniel W",
+  publisher = "McGraw-Hill Professional",
+  month     =  jan,
+  year      =  2010,
+  address   = "New York, NY",
+  language  = "en"
+}
+
 % Real-Time Hardware-In-The-Loop (HIL) Testing for Power Electronics Controllers
 @INPROCEEDINGS{6307219,
     author={Cha, Seung Tae and Wu, Qiuwei and Nielsen, Arne Hejde and Østergaard, Jacob and Park, In Kwon},
