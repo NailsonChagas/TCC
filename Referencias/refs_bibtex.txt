@@ -39,6 +39,18 @@
     note         = {Acessado em: 5 abr. 2026}
 }
 
+% Computer Organization and Embedded Systems
+@BOOK{Hamacher2011-xu,
+  title     = "Computer organization and embedded systems",
+  author    = "Hamacher, V Carl and Vranesic, Zvonko G and Zaky, Safwat G and
+               Manjikian, Naraig",
+  publisher = "McGraw-Hill Professional",
+  edition   =  6,
+  month     =  jan,
+  year      =  2011,
+  address   = "New York, NY"
+}
+
 % Consistent Test Reuse Across MIL → SIL → HIL in a Model-Driven Development Workflow (Siemens)
 @techreport{siemens_test_reuse_2020,
     author      = {Lance Brooks},

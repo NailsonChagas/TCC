@@ -20,6 +20,7 @@ Este repositório contém os arquivos relacionados ao desenvolvimento do **Traba
 - [A Model-Based Design and Verification Framework for Virtual ECUs in Automotive Seat Control Systems](https://www.mdpi.com/2079-9292/15/3/569)
 - [A Rapid Review on Advanced Software-in-the-Loop Methods for Automotive Software Verification](https://sol.sbc.org.br/index.php/sast/article/view/30216)
 - [Aplicação do Modelo Linear de Vorpérian ao Conversor tipo Buck](https://www.eletrica.ufpr.br/mehl/downloads/modelamento-buck.pdf)
+- [Computer Organization and Embedded Systems](https://www.amazon.com/Computer-Organization-Professor-Electrical-Engineering/dp/0073380652)
 - [Consistent Test Reuse Across MIL → SIL → HIL in a Model-Driven Development Workflow (Siemens)](https://www.plm.automation.siemens.com/media/global/cz/Siemens-SW-Consistent-test-reuse-across-MIL-White-Paper_tcm84-98441.pdf)
 - [Cost-effective and versatile Hardware-in-the-Loop system for DC/DC converter emulation in education and research](https://www.hardware-x.com/article/S2468-0672(25)00079-3/fulltext)
 - [ELETRÔNICA de POTÊNCIA: Dispositivos, circuitos e aplicações](https://www.amazon.com.br/Eletr%C3%B4nica-pot%C3%AAncia-dispositivos-circuitos-aplica%C3%A7%C3%B5es/dp/8543005949)
