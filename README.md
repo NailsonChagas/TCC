@@ -31,6 +31,7 @@ Este repositório contém os arquivos relacionados ao desenvolvimento do **Traba
 - [Model-Driven Engineering in Education](https://ieeexplore.ieee.org/document/8624724)
 - [Modelling and Control of a Buck Converter Using State-Space Averaging and Classical Feedback Techniques](https://arxiv.org/abs/2507.09115)
 - [Modern Control Engineering - 5th Edition](https://www.amazon.com.br/Modern-Control-Engineering-Fifth-English-ebook/dp/B08P5ZRZXN)
+- [Power Electronics](https://www.amazon.com.br/Power-Electronics-Daniel-Hart-Professor/dp/0073380679)
 - [Real-Time Hardware-In-The-Loop (HIL) Testing for Power Electronics Controllers](https://ieeexplore.ieee.org/document/6307219)
 - [State space averaging technique of power converter with digital PID controller](https://ieeexplore.ieee.org/document/5395907)
 - [Testing Embedded Software: A Survey of the Literature](https://www.sciencedirect.com/science/article/pii/S0950584918301265)
