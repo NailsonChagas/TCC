@@ -30,11 +30,13 @@
        2.2.3 Controladores PID digitais
        2.2.4 Implementação em microcontroladores
        2.2.5 Desafios de validação e testes
-
+    
        Referências:
        - Modern Control Engineering
        - State space averaging technique of power converter with digital PID controller
        - Testing Embedded Software: A Survey of the Literature
+
+       Obs: procurar referencias sobre RTOS
 
    2.3 Desenvolvimento Baseado em Modelos (MBD)
        2.3.1 Conceito de Model-Based Design
@@ -55,11 +57,16 @@
        2.4.4 Taxa de amostragem da simulação vs frequência de controle
        2.4.5 Arquiteturas de implementação (CPU, DSP, FPGA)
        2.4.6 Plataformas comerciais -> estado da arte
-       2.4.7 Sistemas de baixo custo / acadêmicos -> trabalhos semelhantes
 
        Referências:
        - Hardware-in-the-loop simulation for the design and testing of engine-control systems
        - Hardware-in-the-Loop Simulations: A Historical Overview of Engineering Challenges
+       - Real-Time Hardware-In-The-Loop (HIL) Testing for Power Electronics Controllers
+       - Cost-effective and versatile Hardware-in-the-Loop system for DC/DC converter emulation in education and research
+       - Hardware Emulation of Step-Down Converter Power Stages for Digital Control Design 
+
+    2.5 Sistemas de baixo custo / acadêmicos -> trabalhos semelhantes
+        Referências:
        - Real-Time Hardware-In-The-Loop (HIL) Testing for Power Electronics Controllers
        - Cost-effective and versatile Hardware-in-the-Loop system for DC/DC converter emulation in education and research
        - Hardware Emulation of Step-Down Converter Power Stages for Digital Control Design 
