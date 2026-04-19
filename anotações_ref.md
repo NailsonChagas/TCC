@@ -10,8 +10,6 @@
 2. Revisão Bibliográfica
 
    2.1 Conversores Eletrônicos de Potência
-       2.1.1 Conceitos básicos
-       2.1.2 Topologias de conversores CC-CC
        2.1.3 Conversor Buck
            - Princípio de funcionamento
            - Modos de condução (CCM e DCM)
@@ -25,7 +23,6 @@
        - Modern Control Engineering
 
    2.2 Controle Digital e Sistemas Embarcados
-       2.2.1 Conceitos de controle digital
        2.2.2 Discretização de controladores
        2.2.3 Controladores PID digitais
        2.2.4 Implementação em microcontroladores
