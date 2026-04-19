@@ -62,6 +62,17 @@
     number      = {81432-C4 6/20 N}
 }
 
+% Controle Digital Aplicado
+@BOOK{Angelico2023,
+  title     = "Controle Digital Aplicado",
+  author    = "Ang{\'e}lico, Bruno Augusto and Neves, Gabriel Pereira das",
+  publisher = "Blucher",
+  month     =  mar,
+  year      =  2023,
+  address   = "São Paulo, Brasil",
+  language  = "pt"
+}
+
 % Cost-effective and versatile Hardware-in-the-Loop system for DC/DC converter emulation in education and research
 @Article{Gaviria-Cano2025,
     author={Gaviria-Cano, Alejandro
@@ -82,6 +93,7 @@
     doi={10.1016/j.ohx.2025.e00701},
     url={https://doi.org/10.1016/j.ohx.2025.e00701}
 }
+
 
 % ELETRÔNICA de POTÊNCIA: Dispositivos, circuitos e aplicações
 @book{rashid2014eletronica,
@@ -228,6 +240,16 @@
     pages={1-6},
     keywords={Inverters;Pulse width modulation;Digital signal processing;Voltage control;Real time systems;Bridge circuits},
     doi={10.1109/APPEEC.2012.6307219}
+}
+
+% Sistemas operacionais de tempo real e sua aplicação em sistemas embarcados
+@book{Denardin_Barriquello_2019, 
+  place={São Paulo}, 
+  title={Sistemas Operacionais de Tempo Real e sua Aplicação em Sistemas Embarcados}, 
+  publisher={Blucher}, 
+  edition   =  1,
+  author={Denardin, Gustavo Weber and Barriquello, Carlos Henrique}, 
+  year={2019}
 }
 
 % State space averaging technique of power converter with digital PID controller
