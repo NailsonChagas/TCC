@@ -46,10 +46,18 @@ Um exemplo de TCC que o prof Cardoso passou: [Implementação de um conversor bo
       - Falar sobre plataformas comerciais e seus custos
       - Falar que trabalhos recentes estão explorando a criação de plataformas HIL modulares e de baixo custo baseadas em microcontroladores acessíveis
 
-3. Metodologia e Desenvolvimento
-4. Conclusão
-5. Referências
-6. Anexos
+3. Modelagem e Desenvolvimento do Sistema
+    1. Materiais a serem usados
+    2. Modelagem do sistema
+    3. Desenvolvimento do Sistema → ***Não abordado em TCC 1, fazer no TCC 2***
+
+4. Resultados → ***Não abordado em TCC 1, fazer no TCC 2***
+
+5. Conclusão → ***Não abordado em TCC 1, fazer no TCC 2***
+
+6. Referências
+
+7. Anexos
    1. Projeto de conversores Buck projetados para operar em CCM
    2. Discretização e implementação de controladores PID
 
