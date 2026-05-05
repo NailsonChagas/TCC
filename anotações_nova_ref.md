@@ -66,3 +66,8 @@ Um exemplo de TCC que o prof Cardoso passou: [Implementação de um conversor bo
 Em relação ao uso de ferramentas de LLM para auxiliar a escrita do trabalho:
 
 [**PORTARIA CNPq**](http://memoria2.cnpq.br/web/guest/view/-/journal_content/56_INSTANCE_0oED/10157/23142775) ***Nº 2.664, Artigo 9, Inciso I, alínea* C**: declarar o uso de ferramentas de Inteligência Artificial Generativa (IAG), de qualquer espécie e em qualquer fase do desenvolvimento da pesquisa (concepção, redação, análise de dados, submissão), especificando nos respectivos textos e exposições eletrônicas a ferramenta utilizada e a finalidade.
+
+## Metas
+1. **Terminar uma primeira versão da monografia de TCC 1** até o dia **11/05/2026** e enviar para o Cardoso fazer correções
+
+2. **Fazer as correções** até o dia **18/05/2026** e enviar para o Cardoso para checar se está bom o bastante para a banca de TCC 1
