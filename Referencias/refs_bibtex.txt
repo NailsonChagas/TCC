@@ -94,6 +94,21 @@
     url={https://doi.org/10.1016/j.ohx.2025.e00701}
 }
 
+% Data and Workflow Management for Virtual Development of Software-defined Vehicles
+@ARTICLE{Kochem2023-nv,
+  title     = "Data and workflow management for virtual development of
+               software-defined vehicles",
+  author    = "Kochem, Michael and Kemper, Henning and Bilgic Istoc, Sami",
+  journal   = "ATZ Worldw.",
+  publisher = "Springer Science and Business Media LLC",
+  volume    =  125,
+  number    = "7-8",
+  pages     = "74--79",
+  month     =  jul,
+  year      =  2023,
+  copyright = "https://www.springernature.com/gp/researchers/text-and-data-mining",
+  language  = "en"
+}
 
 % ELETRÔNICA de POTÊNCIA: Dispositivos, circuitos e aplicações
 @book{rashid2014eletronica,

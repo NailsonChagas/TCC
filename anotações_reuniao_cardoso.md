@@ -14,6 +14,7 @@ contextualizar para a eletronica de potencia
 buck e o controle é uma aplicação (metodologia), focar forte no x in the loop
 
 http://memoria2.cnpq.br/web/guest/view/-/journal_content/56_INSTANCE_0oED/10157/23142775
+         Art. 9º  São diretrizes de integridade na pesquisa apoiada pelo CNPq:
 
 Procurar trabahlos de orientados do cardoso -> pedro
 
