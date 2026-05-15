@@ -1,0 +1,19 @@
+### `hil_topology.png`
+- Simulator -> Simulador
+- Controller under Test -> Controlador em Teste
+
+### `v_cycle.png`
+- Tests on the real prototype hardware -> Testes no hardware do protótipo real
+- Issues -> Problemas
+- Advanced development -> Desenvolvimento avançado
+- Real prototype hardware tests -> Testes no hardware do protótipo real
+- Development time -> Tempo de desenvolvimento
+- Concept -> Conceito
+- Requirements -> Requisitos
+- Specification -> Especificação
+- Implementation -> Implementação
+- Unit tests -> Testes unitários
+- System integration tests -> Testes de integração do sistema
+- Release tests -> Testes de validação final
+- Validation -> Validação
+- Virtual prototype tests -> Testes em protótipo virtual
