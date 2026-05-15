@@ -202,6 +202,24 @@
     DOI = {10.3390/electronics11152462}
 }
 
+%IDE - STM32CubeIDE
+@misc{STM32CubeIDE,
+  author       = {{STMicroelectronics}},
+  title        = {STM32CubeIDE},
+  year         = {2026},
+  url          = {https://www.st.com/en/development-tools/stm32cubeide.html},
+  note         = {Acesso em: 15 maio 2026}
+}
+
+%IDE - VSCode
+@misc{VSCode,
+  author       = {{Microsoft}},
+  title        = {Visual Studio Code},
+  year         = {2026},
+  url          = {https://code.visualstudio.com/},
+  note         = {Acesso em: 15 maio 2026}
+}
+
 % Model-Based System Design for MIL, SIL, and HIL
 @Article{wevj5041121,
     AUTHOR = {Nibert, Jonathan and Herniter, Marc E. and Chambers, Zachariah},
