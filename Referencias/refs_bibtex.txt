@@ -110,6 +110,26 @@
   language  = "en"
 }
 
+% Datasheet STM32F407xx 
+@manual{stm32f407ve_datasheet,
+  author       = {{STMicroelectronics}},
+  title        = {STM32F407VE: High-performance foundation line, Arm Cortex-M4 core with DSP and FPU},
+  organization = {STMicroelectronics},
+  year         = {2026},
+  url          = {https://www.st.com/en/microcontrollers-microprocessors/stm32f407ve.html},
+  note         = {Accessed: 2026-05-15}
+}
+
+% Datasheet STM32F103x8
+@manual{stm32f103c8_datasheet,
+  author       = {{STMicroelectronics}},
+  title        = {STM32F103C8: Mainstream performance line, Arm Cortex-M3 MCU},
+  organization = {STMicroelectronics},
+  year         = {2026},
+  url          = {https://www.st.com/en/microcontrollers-microprocessors/stm32f103c8.html},
+  note         = {Accessed: 2026-05-15}
+}
+
 % ELETRÔNICA de POTÊNCIA: Dispositivos, circuitos e aplicações
 @book{rashid2014eletronica,
     author    = {Muhammad H. Rashid},
