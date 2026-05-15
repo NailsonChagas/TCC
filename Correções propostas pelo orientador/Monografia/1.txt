@@ -1,0 +1,33 @@
+A primeira correção foi em relação ao conteúdo que eu estava colocando na referência bibliográfica, conforme foi discutido em uma reunião no Google Meet.
+
+- Na revisão bibliográfica, abordar os conversores de maneira geral e deixar a discussão específica sobre o conversor Buck para a metodologia.
+
+- Transferir a explicação de funcionamento do conversor Buck para a metodologia.
+
+- Alterar o nome do capítulo “Metodologia” para “Desenvolvimento da Plataforma”.
+
+- Mover a dedução das equações do conversor Buck e do controlador para os apêndices.
+
+- Colocar as simulações do conversor Buck e do controlador nos apêndices.
+
+- Manter o corpo principal do trabalho focado na plataforma HiL.
+
+- No capítulo de revisão bibliográfica, focar em “X-in-the-Loop”, especialmente em Hardware-in-the-Loop (HiL).
+
+- Explicar por que o HiL é importante.
+
+- Contextualizar o uso do HiL para aplicações em eletrônica de potência.
+
+- Tratar o conversor Buck e seu controle como uma aplicação dentro da metodologia/desenvolvimento da plataforma.
+
+- Dar maior ênfase ao conceito de “X-in-the-Loop” ao longo do trabalho.
+
+- Ler o Art. 9º das diretrizes de integridade na pesquisa apoiada pelo CNPq:
+  [CNPq – Diretrizes de integridade na pesquisa](http://memoria2.cnpq.br/web/guest/view/-/journal_content/56_INSTANCE_0oED/10157/23142775?utm_source=chatgpt.com)
+
+- Procurar trabalhos orientados pelo Professor Cardoso, especialmente os do Pedro.
+
+- Consultar o repositório da UTFPR:
+  [Repositório Institucional UTFPR](https://repositorio.utfpr.edu.br/jspui/handle/1/40194?utm_source=chatgpt.com)
+
+- Eu estava colocando conteúdo demais na revisão bibliográfica.
