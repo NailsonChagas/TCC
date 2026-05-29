@@ -110,6 +110,16 @@
   language  = "en"
 }
 
+% Datasheet STM32F411CE
+@manual{stm32f411ce_datasheet,
+  author       = {{STMicroelectronics}},
+  title        = {STM32F411CE: Arm Cortex-M4 32-bit MCU with FPU, 512 KB Flash and 128 KB RAM},
+  organization = {STMicroelectronics},
+  year         = {2024},
+  url          = {https://www.st.com/en/microcontrollers-microprocessors/stm32f411ce.html},
+  note         = {Accessed: 2026-05-15}
+}
+
 % Datasheet STM32F407xx 
 @manual{stm32f407ve_datasheet,
   author       = {{STMicroelectronics}},
@@ -117,16 +127,6 @@
   organization = {STMicroelectronics},
   year         = {2026},
   url          = {https://www.st.com/en/microcontrollers-microprocessors/stm32f407ve.html},
-  note         = {Accessed: 2026-05-15}
-}
-
-% Datasheet STM32F103x8
-@manual{stm32f103c8_datasheet,
-  author       = {{STMicroelectronics}},
-  title        = {STM32F103C8: Mainstream performance line, Arm Cortex-M3 MCU},
-  organization = {STMicroelectronics},
-  year         = {2026},
-  url          = {https://www.st.com/en/microcontrollers-microprocessors/stm32f103c8.html},
   note         = {Accessed: 2026-05-15}
 }
 
