@@ -1,0 +1,30 @@
+Sugestão 1:
+- Comentário do orientador: "Seu título é genérico para conversores CC/CC e assim deve ficar. reescrevi para indicar que como exemplo de aplicação será usado um buck. Faça isso ao longo de todo o texto."
+- Onde: Ao longo do trabalho inteiro, voltar revisando
+	- trocar nas palavras chaves
+
+Sugestão 2:
+- Comentário do orientador: "Eu justificaria com o foco em estudar, dominar, documentar e disseminar a tecnologia de HiL. Desconheço produto nacional. Só importados."
+- Onde: cap-introducao.tex linha 45: "\section{Justificativa} \label{sec:justificativa}
+O desenvolvimento de sistemas de controle digital embarcados envolve a integração de diferentes áreas da engenharia, como teoria de controle, modelagem de sistemas dinâmicos e programação de microcontroladores. Nesse contexto, a realização deste trabalho possibilita aplicar de forma integrada conhecimentos adquiridos ao longo do curso em uma aplicação prática relacionada ao controle de conversores eletrônicos de potência.
+
+Além disso, o desenvolvimento de uma plataforma de testes baseada em HiL permite explorar conceitos associados à simulação em tempo real e à validação de controladores digitais embarcados. Essa abordagem contribui para a compreensão das técnicas utilizadas no teste e validação de estratégias de controle em ambientes experimentais.
+
+Dessa forma, a proposta justifica-se pela oportunidade de consolidar conhecimentos teóricos estudados durante a graduação por meio do desenvolvimento de uma plataforma experimental voltada ao estudo e validação de estratégias de controle digital aplicadas a conversores CC-CC do tipo buck."
+
+Sugestão 3:
+- Comentário do orientador: "Acho que pode usar uma terminologia diferente para não confundir com a frequência de amostragem do controlador. Eu diria que o período de integração numérica deve ser ao menos 10x menor do que o período do PWM"
+- Onde: cap-modelagem.tex linha 62: "Para garantir a fidelidade da simulação e reduzir erros associados à discretização numérica, a frequência de amostragem $F_s$ deverá ser pelo menos dez vezes superior à frequência de comutação $F_c$ \cite{Gaviria-Cano2025}, resultando, neste caso, em $F_s = 200\,\text{kHz}$."
+
+Sugestão 4:
+- Comentário do orientador: "Vc tem acesso a esses microcontroladores?"
+- Onde: cap-modelagem.tex linha 79: "Comparação técnica entre os microcontroladores selecionados para a plataforma HiL"
+
+Sugestão 5:
+- Comentário do orientador: "Eu incluiria o PSIM. Talvez seja mais fácil de fazer nele pq ele integra a simulação do circuito com controle (que pode ser implementado via C)"
+- Onde: cap-modelagem.tex linha 147: "A primeira etapa consistirá na validação do modelo matemático discretizado do conversor Buck. Após a obtenção das equações de diferenças, será verificado se a resposta do modelo numérico reproduz adequadamente o comportamento dinâmico esperado da planta. Para isso, o modelo discretizado, implementado em ambiente computacional como MATLAB ou Python, terá suas respostas nos domínios do tempo e da frequência comparadas com os resultados obtidos por meio de um simulador de circuitos elétricos de referência baseado em SPICE, como o \textit{LTspice}. Ambas as simulações utilizarão os mesmos parâmetros elétricos, incluindo tensão de entrada, frequência de chaveamento e razão cíclica. A concordância entre os resultados permitirá verificar a exatidão das equações matemáticas utilizadas na emulação da planta."
+
+Sugestão 6:
+- Comentário do orientador: "Eu incluiria um cronograma de execução do trabalho"
+- Onde: cap-modelagem.tex final
+
