@@ -1,3 +1,16 @@
+# Ambientes virtuais Python (qualquer nível)
+venv/
+**/venv/
+**/**/venv/
+
+# Cache do Python (qualquer nível)
+__pycache__/
+**/__pycache__/
+**/**/__pycache__/
+
+# Arquivos de referência/documentos grandes
 Referencias/Sistemas operacionais de tempo real e sua aplicação em -- Gustavo Weber Denardin, Carlos Henrique Barriquello -- 1, 2019 -- Editora Edgard Blucher -- isbn13 9788521213963.pdf
 Referencias/Controle digital aplicado.pdf
+
+# Pasta/arquivo de testes
 teste
