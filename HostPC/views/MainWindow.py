@@ -25,7 +25,7 @@ class MainWindow(ctk.CTk):
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(padx=20, pady=20, fill="both", expand=True)
         
-        self.tab_buck = self.tabview.add("Projetar Conversor")
+        self.tab_buck = self.tabview.add("Adicionar Conversor")
         self.tab_test = self.tabview.add("Configurar Testes")
         
         # As Views internas DEVEM usar fill="both" e expand=True para acompanhar o redimensionamento

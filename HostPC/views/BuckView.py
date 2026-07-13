@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from utils.constants import FS  # Importamos a constante fixa do seu ficheiro
+from utils.constants import FS
 
 class BuckView(ctk.CTkFrame):
     def __init__(self, master, controller, on_converter_added_callback):
