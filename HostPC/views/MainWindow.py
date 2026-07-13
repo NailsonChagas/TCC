@@ -8,18 +8,27 @@ class MainWindow(ctk.CTk):
         self.controller = controller
         
         self.title("Plataforma de Dimensionamento de Conversores")
-        self.geometry("950x550")
+        
+        # 1. Define o tamanho padrão de abertura (um pouco maior para dar respiro)
+        self.geometry("1100x800")
+        
+        # 2. GARANTIA CRÍTICA: Impede que a janela seja reduzida a ponto de cortar os itens
+        self.minsize(1050, 700)
+        
+        # 3. Permite que a janela seja maximizada e redimensionada livremente
+        self.resizable(True, True)
         
         self.setup_tabs()
 
     def setup_tabs(self):
+        # O CTkTabview deve preencher todo o espaço disponível da janela principal
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(padx=20, pady=20, fill="both", expand=True)
         
         self.tab_buck = self.tabview.add("Projetar Conversor")
         self.tab_test = self.tabview.add("Configurar Testes")
         
-        # Inicializa a visualização do Buck
+        # As Views internas DEVEM usar fill="both" e expand=True para acompanhar o redimensionamento
         self.buck_view = BuckView(
             master=self.tab_buck, 
             controller=self.controller, 
@@ -27,16 +36,15 @@ class MainWindow(ctk.CTk):
         )
         self.buck_view.pack(fill="both", expand=True)
         
-        # Inicializa a visualização de Testes
         self.test_view = TestView(
             master=self.tab_test, 
             controller=self.controller
         )
         self.test_view.pack(fill="both", expand=True)
 
-        # CORREÇÃO CRÍTICA: Força o preenchimento da lista de testes na inicialização
+        # Força o carregamento inicial dos conversores salvos em disco (.json)
         self.test_view.refresh_converter_list()
 
     def on_converter_added(self):
-        # Callback para atualizar quando um conversor novo for criado em tempo de execução
+        # Callback síncrono para atualizar a lista na aba de testes
         self.test_view.refresh_converter_list()
