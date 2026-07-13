@@ -1,0 +1,80 @@
+%buck
+% \documentclass[tikz,border=2pt]{standalone}
+% \usepackage[american]{circuitikz}
+% \begin{document}
+% \begin{tikzpicture}[transform shape, american voltages]
+% 	% Paths, nodes and wires:
+% 	\draw (5, 3.75) to[american voltage source, l_={$V_{s_1}$}] (5, 2.75);
+% 	\draw (5, 5.25) to[sinusoidal voltage source, l_={$V_{s_2}$}] (5, 4.25);
+% 	\draw (5, 2) to[short] (5, 2.5);
+% 	\draw (5, 5.5) to[short, /tikz/circuitikz/bipoles/length=1.44cm] (5, 6);
+% 	\draw (5, 5.5) to[short] (5, 5.25);
+% 	\draw (5, 2.75) to[short] (5, 2.5);
+% 	\draw (5, 4.25) to[short] (5, 3.75);
+% 	\draw (5, 2) to[short] (9, 2);
+% 	\draw (9, 2) to[empty diode, l={$D$}] (9, 6);
+% 	\draw (9, 2) to[short] (13, 2);
+% 	\draw (13, 6) to[curved capacitor, l_={$C$}, v^=$V_C$, voltage/distance from node=0.8, voltage/bump b=0.4, voltage/shift=1.5] (13, 2);
+% 	\draw (9, 6) to[cute inductor, l_={$L$}, v^=$V_L$, voltage/distance from node=0.8, voltage/shift=1.5] (13, 6);
+% 	\draw (5, 6) to[normal open switch, /tikz/circuitikz/bipoles/length=2.10cm, l_={$S$}] (9, 6);
+%     \draw (17, 2) to[american resistor, l_={$R$}, v^<=$V_o$, voltage/distance from node=0.9, voltage/shift=2] (17, 6);
+% 	\draw (13, 2) to[short] (17, 2);
+% 	\draw (13, 6) to[short] (17, 6);
+% 	\draw[line width=0.6pt, -latex] (12, 6.25) -- (13, 6.25);
+% 	\node[shape=rectangle, minimum width=0.465cm, minimum height=0.465cm](N1) at (12.5, 6.5){} node[anchor=center] at (N1.text){$I_L$};
+% 	\draw[line width=0.6pt, -latex] (13.25, 5.75) -- (13.25, 4.75);
+% 	\node[shape=rectangle, rotate=-90, minimum width=0.465cm, minimum height=0.465cm](N2) at (13.5, 5.25){} node[anchor=center] at (N2.text){$I_C$};
+% 	\draw[line width=0.6pt, -latex] (17.25, 5.75) -- (17.25, 4.75);
+% 	\node[shape=rectangle, rotate=-90, minimum width=0.465cm, minimum height=0.465cm](N3) at (17.5, 5.25){} node[anchor=center] at (N3.text){$I_o$};
+% \end{tikzpicture}
+% \end{document}
+
+% buck S close
+% \documentclass[tikz,border=2pt]{standalone}
+% \usepackage[american]{circuitikz}
+% \begin{document}
+% \begin{tikzpicture}[transform shape, american voltages]
+% 	% Paths, nodes and wires:
+% 	\draw (9, 3.75) to[american voltage source, l_={$V_{s_1}$}] (9, 2.75);
+% 	\draw (9, 5.25) to[sinusoidal voltage source, l_={$V_{s_2}$}] (9, 4.25);
+% 	\draw (9, 2) to[short] (9, 2.5);
+% 	\draw (9, 5.5) to[short, /tikz/circuitikz/bipoles/length=1.44cm] (9, 6);
+% 	\draw (9, 5.5) to[short] (9, 5.25);
+% 	\draw (9, 2.75) to[short] (9, 2.5);
+% 	\draw (9, 4.25) to[short] (9, 3.75);
+% 	\draw (9, 2) to[short] (13, 2);
+% 	\draw (13, 6) to[curved capacitor, l_={$C$}, v^=$V_C$, voltage/distance from node=0.8, voltage/bump b=0.4, voltage/shift=1.5] (13, 2);
+% 	\draw (9, 6) to[cute inductor, l_={$L$}, v^=$V_L$, voltage/distance from node=0.8, voltage/shift=1.5] (13, 6);
+% 	\draw (17, 2) to[american resistor, l_={$R$}, v^<=$V_o$, voltage/distance from node=0.8, voltage/shift=2] (17, 6);
+% 	\draw (13, 2) to[short] (17, 2);
+% 	\draw (13, 6) to[short] (17, 6);
+% 	\draw[line width=0.6pt, -latex] (12, 6.25) -- (13, 6.25);
+% 	\node[shape=rectangle, minimum width=0.465cm, minimum height=0.465cm](N1) at (12.5, 6.5){} node[anchor=center] at (N1.text){$I_L$};
+% 	\draw[line width=0.6pt, -latex] (13.25, 5.75) -- (13.25, 4.75);
+% 	\node[shape=rectangle, rotate=-90, minimum width=0.465cm, minimum height=0.465cm](N2) at (13.5, 5.25){} node[anchor=center] at (N2.text){$I_C$};
+% 	\draw[line width=0.6pt, -latex] (17.25, 5.75) -- (17.25, 4.75);
+% 	\node[shape=rectangle, rotate=-90, minimum width=0.465cm, minimum height=0.465cm](N3) at (17.5, 5.25){} node[anchor=center] at (N3.text){$I_o$};
+% \end{tikzpicture}
+% \end{document}
+
+% buck S open
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage[american]{circuitikz}
+\begin{document}
+\begin{tikzpicture}[transform shape, american voltages]
+	% Paths, nodes and wires:
+	\draw (9, 2) to[short] (13, 2);
+	\draw (13, 6) to[curved capacitor, l_={$C$}, v^=$V_C$, voltage/distance from node=0.8, voltage/bump b=0.4, voltage/shift=1.5] (13, 2);
+	\draw (9, 6) to[cute inductor, l_={$L$}, v^=$V_L$, voltage/distance from node=0.8, voltage/shift=1.5] (13, 6);
+	\draw (17, 2) to[american resistor, l_={$R$}, v^<=$V_o$, voltage/distance from node=0.8, voltage/shift=2] (17, 6);
+	\draw (13, 2) to[short] (17, 2);
+	\draw (13, 6) to[short] (17, 6);
+	\draw[line width=0.6pt, -latex] (12, 6.25) -- (13, 6.25);
+	\node[shape=rectangle, minimum width=0.465cm, minimum height=0.465cm](N1) at (12.5, 6.5){} node[anchor=center] at (N1.text){$I_L$};
+	\draw[line width=0.6pt, -latex] (13.25, 5.75) -- (13.25, 4.75);
+	\node[shape=rectangle, rotate=-90, minimum width=0.465cm, minimum height=0.465cm](N2) at (13.5, 5.25){} node[anchor=center] at (N2.text){$I_C$};
+	\draw[line width=0.6pt, -latex] (17.25, 5.75) -- (17.25, 4.75);
+	\node[shape=rectangle, rotate=-90, minimum width=0.465cm, minimum height=0.465cm](N3) at (17.5, 5.25){} node[anchor=center] at (N3.text){$I_o$};
+	\draw (9, 6) to[short] (9, 2);
+\end{tikzpicture}
+\end{document}
