@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from utils.constants import FS  # Importamos a constante fixa do seu ficheiro
 
 class BuckView(ctk.CTkFrame):
     def __init__(self, master, controller, on_converter_added_callback):
@@ -64,8 +65,9 @@ class BuckView(ctk.CTkFrame):
         self.param_entries['po'] = self.create_input_row(self.param_form_frame, "Potência - Po (W):", 2)
         self.param_entries['delta_il'] = self.create_input_row(self.param_form_frame, "Ripple de Corrente - ΔiL (A):", 3)
         self.param_entries['delta_vo'] = self.create_input_row(self.param_form_frame, "Ripple de Tensão - ΔVo (V):", 4)
-        self.param_entries['fs'] = self.create_input_row(self.param_form_frame, "Freq. Chaveamento - fs (Hz):", 5)
-        self.param_entries['fs'].insert(0, "50000")
+        
+        # Etiqueta estática para a frequência fixa
+        ctk.CTkLabel(self.param_form_frame, text=f"Freq. Chaveamento - fs: {FS} Hz (Fixa)").grid(row=5, column=0, columnspan=2, pady=(10, 0))
 
     def setup_components_form(self):
         self.comp_form_frame = ctk.CTkFrame(self.left_panel, fg_color="transparent")
@@ -74,8 +76,9 @@ class BuckView(ctk.CTkFrame):
         self.comp_entries['r'] = self.create_input_row(self.comp_form_frame, "Resistência de Carga - R (Ω):", 2)
         self.comp_entries['l'] = self.create_input_row(self.comp_form_frame, "Indutância - L (H):", 3)
         self.comp_entries['c'] = self.create_input_row(self.comp_form_frame, "Capacitância - C (F):", 4)
-        self.comp_entries['fs'] = self.create_input_row(self.comp_form_frame, "Freq. Chaveamento - fs (Hz):", 5)
-        self.comp_entries['fs'].insert(0, "50000")
+        
+        # Etiqueta estática para a frequência fixa
+        ctk.CTkLabel(self.comp_form_frame, text=f"Freq. Chaveamento - fs: {FS} Hz (Fixa)").grid(row=5, column=0, columnspan=2, pady=(10, 0))
 
     def handle_mode_switch(self, selected_mode):
         self.current_mode = selected_mode
@@ -103,7 +106,8 @@ class BuckView(ctk.CTkFrame):
                 po = float(self.param_entries['po'].get().replace(",", "."))
                 delta_il = float(self.param_entries['delta_il'].get().replace(",", "."))
                 delta_vo = float(self.param_entries['delta_vo'].get().replace(",", "."))
-                fs = float(self.param_entries['fs'].get().replace(",", "."))
+                fs = FS  # Usa a constante importada
+                
                 uid = f"BuckParam_Vo{vo}V_Po{po}W_#{converter_count}"
                 buck, error_msg = self.controller.register_converter_by_parameters(uid, vs, vo, po, delta_il, delta_vo, fs)
             else:
@@ -112,7 +116,8 @@ class BuckView(ctk.CTkFrame):
                 r = float(self.comp_entries['r'].get().replace(",", "."))
                 l = float(self.comp_entries['l'].get().replace(",", "."))
                 c = float(self.comp_entries['c'].get().replace(",", "."))
-                fs = float(self.comp_entries['fs'].get().replace(",", "."))
+                fs = FS  # Usa a constante importada
+                
                 uid = f"BuckComp_Vo{vo}V_R{r}Ω_#{converter_count}"
                 buck, error_msg = self.controller.register_converter_by_components(uid, vs, vo, r, l, c, fs)
 

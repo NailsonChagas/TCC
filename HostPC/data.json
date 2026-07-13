@@ -58,8 +58,34 @@
         ],
         "BuckComp_Vo23.0V_R20.0\u03a9_#2": [],
         "BuckParam_Vo5.0V_Po3.0W_#3": [],
-        "BuckParam_Vo1.0V_Po12.0W_#4": [],
+        "BuckParam_Vo1.0V_Po12.0W_#4": [
+            {
+                "amplitude": 1.0,
+                "frequency": 60.0
+            }
+        ],
         "BuckParam_Vo1.0V_Po12.0W_#5": [],
-        "BuckParam_Vo1.0V_Po12.0W_#6": []
+        "BuckParam_Vo1.0V_Po12.0W_#6": [
+            {
+                "amplitude": 1.0,
+                "frequency": 60.0
+            },
+            {
+                "amplitude": 1.0,
+                "frequency": 60.0
+            },
+            {
+                "amplitude": 1.0,
+                "frequency": 60.0
+            },
+            {
+                "amplitude": 1.0,
+                "frequency": 60.0
+            },
+            {
+                "amplitude": 1.0,
+                "frequency": 60.0
+            }
+        ]
     }
 }
