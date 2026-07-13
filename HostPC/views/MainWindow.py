@@ -7,7 +7,7 @@ class MainWindow(ctk.CTk):
         super().__init__()
         self.controller = controller
         
-        self.title("Plataforma de Dimensionamento de Conversores")
+        self.title("Gerenciador da plataforma HIL")
         
         # 1. Define o tamanho padrão de abertura (um pouco maior para dar respiro)
         self.geometry("1100x800")
