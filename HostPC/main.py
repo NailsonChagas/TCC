@@ -1,4 +1,3 @@
-# main.py (na raiz do projeto)
 from controllers.AppController import AppController
 from views.MainWindow import MainWindow
 
