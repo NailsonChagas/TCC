@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+DPI = 500
+
 # Dentro do arquivo buck.csv tenho o resultado de uma simulação 
 # feita com os seguintes parametros:
 # .tran 0 1m 0 20n
@@ -74,13 +76,13 @@ def buck_trapezium_discretization(n):
     return t, iL, vC
 
 def main():
+    DPI = 300 # Definindo a resolução padrão para salvar as imagens
+
     # ==========================================================
     # IMAGENS COMPLETAS (Todo o intervalo de simulação)
     # ==========================================================
-    
-    # --- IMAGEM 1: CORRENTE COMPLETA ---
     fig_iL, (ax_iL_eul, ax_iL_trap) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_iL.suptitle('Corrente no Indutor (iL) - Completo', fontsize=14, fontweight='bold')
+    fig_iL.suptitle(r'Corrente no Indutor ($i_L$) - Completo', fontsize=14, fontweight='bold')
     
     ax_iL_eul.set_title('Método de Euler')
     ax_iL_eul.set_ylabel('Corrente [A]')
@@ -92,9 +94,8 @@ def main():
     ax_iL_trap.set_xlabel('Tempo [ms]')
     ax_iL_trap.grid(True)
 
-    # --- IMAGEM 2: TENSÃO COMPLETA ---
     fig_vC, (ax_vC_eul, ax_vC_trap) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_vC.suptitle('Tensão no Capacitor (vC) - Completo', fontsize=14, fontweight='bold')
+    fig_vC.suptitle(r'Tensão no Capacitor ($v_C$) - Completo', fontsize=14, fontweight='bold')
     
     ax_vC_eul.set_title('Método de Euler')
     ax_vC_eul.set_ylabel('Tensão [V]')
@@ -108,13 +109,10 @@ def main():
 
 
     # ==========================================================
-    # IMAGENS COM ZOOM (0.2ms a 0.225ms)
+    # IMAGENS REGIME PERMANENTE (Zoom)
     # ==========================================================
-    
-    # --- IMAGEM 3: CORRENTE COM ZOOM ---
     fig_iL_z, (ax_iL_eul_z, ax_iL_trap_z) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_iL_z.suptitle('Corrente (iL) - ZOOM (0.2ms a 0.225ms)', fontsize=14, fontweight='bold')
-    
+    fig_iL_z.suptitle(r'Corrente no Indutor ($i_L$) - Regime Permanente (0.2ms a 0.225ms)', fontsize=14, fontweight='bold')
     ax_iL_eul_z.set_title('Método de Euler (Zoom)')
     ax_iL_eul_z.set_ylabel('Corrente [A]')
     ax_iL_eul_z.set_xlabel('Tempo [ms]')
@@ -127,10 +125,8 @@ def main():
     ax_iL_trap_z.grid(True)
     ax_iL_trap_z.set_xlim(0.2, 0.225)
 
-    # --- IMAGEM 4: TENSÃO COM ZOOM ---
     fig_vC_z, (ax_vC_eul_z, ax_vC_trap_z) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_vC_z.suptitle('Tensão (vC) - ZOOM (0.2ms a 0.225ms)', fontsize=14, fontweight='bold')
-    
+    fig_vC_z.suptitle(r'Tensão no Capacitor ($v_C$) - Regime Permanente (0.2ms a 0.225ms)', fontsize=14, fontweight='bold')
     ax_vC_eul_z.set_title('Método de Euler (Zoom)')
     ax_vC_eul_z.set_ylabel('Tensão [V]')
     ax_vC_eul_z.set_xlabel('Tempo [ms]')
@@ -145,64 +141,106 @@ def main():
 
 
     # ==========================================================
+    # IMAGENS REGIME TRANSITÓRIO
+    # ==========================================================
+    fig_iL_trans, (ax_iL_eul_trans, ax_iL_trap_trans) = plt.subplots(1, 2, figsize=(14, 5))
+    # Título corrigido para refletir o transitório
+    fig_iL_trans.suptitle(r'Corrente no Indutor ($i_L$) - Regime Transitório (0.0ms a 0.12ms)', fontsize=14, fontweight='bold')
+    
+    ax_iL_eul_trans.set_title('Método de Euler')
+    ax_iL_eul_trans.set_ylabel('Corrente [A]')
+    ax_iL_eul_trans.set_xlabel('Tempo [ms]')
+    ax_iL_eul_trans.grid(True)
+    ax_iL_eul_trans.set_xlim(0.0, 0.12)
+    
+    ax_iL_trap_trans.set_title('Método do Trapézio')
+    ax_iL_trap_trans.set_ylabel('Corrente [A]')
+    ax_iL_trap_trans.set_xlabel('Tempo [ms]')
+    ax_iL_trap_trans.grid(True)
+    ax_iL_trap_trans.set_xlim(0.0, 0.12)
+
+    fig_vC_trans, (ax_vC_eul_trans, ax_vC_trap_trans) = plt.subplots(1, 2, figsize=(14, 5))
+    # Título corrigido para refletir o transitório
+    fig_vC_trans.suptitle(r'Tensão no Capacitor ($v_C$) - Regime Transitório (0.0ms a 0.12ms)', fontsize=14, fontweight='bold')
+    
+    ax_vC_eul_trans.set_title('Método de Euler')
+    ax_vC_eul_trans.set_ylabel('Tensão [V]')
+    ax_vC_eul_trans.set_xlabel('Tempo [ms]')
+    ax_vC_eul_trans.grid(True)
+    ax_vC_eul_trans.set_xlim(0.0, 0.12)
+    
+    ax_vC_trap_trans.set_title('Método do Trapézio')
+    ax_vC_trap_trans.set_ylabel('Tensão [V]')
+    ax_vC_trap_trans.set_xlabel('Tempo [ms]')
+    ax_vC_trap_trans.grid(True)
+    ax_vC_trap_trans.set_xlim(0.0, 0.12)
+
+
+    # ==========================================================
     # CARREGAMENTO DOS DADOS DO QSPICE
     # ==========================================================
-    qspice_data = np.loadtxt('buck.csv', delimiter=',', skiprows=1)  # Pula a primeira linha (cabeçalho) e separa pelos vírgulas
-    t_qs = qspice_data[:, 0]  # Coluna 0: Tempo
-    vC_qs = qspice_data[:, 1] # Coluna 1: Tensão V(n02)
-    iL_qs = qspice_data[:, 2] # Coluna 2: Corrente I(L1)
+    qspice_data = np.loadtxt('buck.csv', delimiter=',', skiprows=1)
+    t_qs = qspice_data[:, 0]  
+    vC_qs = qspice_data[:, 1] 
+    iL_qs = qspice_data[:, 2] 
+
 
     # ==========================================================
     # EXECUÇÃO E PLOTAGEM
     # ==========================================================
     for n in sorted(F_MULTIPLIER):
-        # Executa as simulações matemáticas
         t_eul, iL_eul, vC_eul = buck_euler_discretization(n)
         t_trap, iL_trap, vC_trap = buck_trapezium_discretization(n)
         
-        # Plota nos gráficos COMPLETOS
+        # Plota completos
         ax_iL_eul.plot(t_eul * 1000, iL_eul, label=f'n={n}', alpha=0.8)
         ax_iL_trap.plot(t_trap * 1000, iL_trap, label=f'n={n}', alpha=0.8)
         ax_vC_eul.plot(t_eul * 1000, vC_eul, label=f'n={n}', alpha=0.8)
         ax_vC_trap.plot(t_trap * 1000, vC_trap, label=f'n={n}', alpha=0.8)
 
-        # Plota nos gráficos COM ZOOM
+        # Plota permanente (zoom)
         ax_iL_eul_z.plot(t_eul * 1000, iL_eul, label=f'n={n}', alpha=0.8)
         ax_iL_trap_z.plot(t_trap * 1000, iL_trap, label=f'n={n}', alpha=0.8)
         ax_vC_eul_z.plot(t_eul * 1000, vC_eul, label=f'n={n}', alpha=0.8)
         ax_vC_trap_z.plot(t_trap * 1000, vC_trap, label=f'n={n}', alpha=0.8)
 
+        # Plota transitório
+        ax_iL_eul_trans.plot(t_eul * 1000, iL_eul, label=f'n={n}', alpha=0.8)
+        ax_iL_trap_trans.plot(t_trap * 1000, iL_trap, label=f'n={n}', alpha=0.8)
+        ax_vC_eul_trans.plot(t_eul * 1000, vC_eul, label=f'n={n}', alpha=0.8)
+        ax_vC_trap_trans.plot(t_trap * 1000, vC_trap, label=f'n={n}', alpha=0.8)
+
     
     qs_style = {'color': 'black', 'linewidth': 1.1, 'linestyle': '-', 'alpha': 0.5, 'label': 'QSpice'}
     
-    # Corrente Completa
-    ax_iL_eul.plot(t_qs * 1000, iL_qs, **qs_style)
-    ax_iL_trap.plot(t_qs * 1000, iL_qs, **qs_style)
-    # Tensão Completa
-    ax_vC_eul.plot(t_qs * 1000, vC_qs, **qs_style)
-    ax_vC_trap.plot(t_qs * 1000, vC_qs, **qs_style)
-    # Corrente Zoom
-    ax_iL_eul_z.plot(t_qs * 1000, iL_qs, **qs_style)
-    ax_iL_trap_z.plot(t_qs * 1000, iL_qs, **qs_style)
-    # Tensão Zoom
-    ax_vC_eul_z.plot(t_qs * 1000, vC_qs, **qs_style)
-    ax_vC_trap_z.plot(t_qs * 1000, vC_qs, **qs_style)
+    # Adiciona QSpice em todos os gráficos
+    for ax_target in [ax_iL_eul, ax_iL_trap, ax_iL_eul_z, ax_iL_trap_z, ax_iL_eul_trans, ax_iL_trap_trans]:
+        ax_target.plot(t_qs * 1000, iL_qs, **qs_style)
         
-    # Adiciona as legendas
+    for ax_target in [ax_vC_eul, ax_vC_trap, ax_vC_eul_z, ax_vC_trap_z, ax_vC_eul_trans, ax_vC_trap_trans]:
+        ax_target.plot(t_qs * 1000, vC_qs, **qs_style)
+        
+    # Adiciona as legendas em todas as janelas (incluindo as novas do transitório)
     for ax in [ax_iL_eul, ax_iL_trap, ax_vC_eul, ax_vC_trap, 
-               ax_iL_eul_z, ax_iL_trap_z, ax_vC_eul_z, ax_vC_trap_z]:
-        ax.legend(fontsize='small')
+               ax_iL_eul_z, ax_iL_trap_z, ax_vC_eul_z, ax_vC_trap_z,
+               ax_iL_eul_trans, ax_iL_trap_trans, ax_vC_eul_trans, ax_vC_trap_trans]:
+        ax.legend(loc='lower right', fontsize='small')
     
-    # Ajusta o espaçamento interno
+    # Ajusta o espaçamento interno de todas as figuras
     fig_iL.tight_layout()
     fig_vC.tight_layout()
     fig_iL_z.tight_layout()
     fig_vC_z.tight_layout()
+    fig_iL_trans.tight_layout()
+    fig_vC_trans.tight_layout()
     
-    fig_iL.savefig('corrente_completa.png', dpi=300)
-    fig_vC.savefig('tensao_completa.png', dpi=300)
-    fig_iL_z.savefig('corrente_zoom.png', dpi=300)
-    fig_vC_z.savefig('tensao_zoom.png', dpi=300)
+    # Salvando as imagens
+    fig_iL.savefig('corrente_completa.png', dpi=DPI)
+    fig_vC.savefig('tensao_completa.png', dpi=DPI)
+    fig_iL_z.savefig('corrente_permanente.png', dpi=DPI)
+    fig_vC_z.savefig('tensao_permanente.png', dpi=DPI)
+    fig_iL_trans.savefig('corrente_trans.png', dpi=DPI)
+    fig_vC_trans.savefig('tensao_trans.png', dpi=DPI)
 
     plt.close('all')
 
