@@ -1,7 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-DPI = 500
+  
+# ==========================================================
+# VARIÁVEIS DE CONFIGURAÇÃO DE FONTES
+# ==========================================================
+FONT_TITLE = 15    # Tamanho da fonte dos títulos dos subgráficos
+FONT_LABEL = 13    # Tamanho da fonte dos rótulos dos eixos X e Y
+FONT_TICKS = 12    # Tamanho da fonte dos números (ticks) dos eixos X e Y
+FONT_LEGEND = 13 # Tamanho da fonte da legenda
+DPI = 500 # Resolução padrão para salvar as imagens
+    
 
 # Dentro do arquivo buck.csv tenho o resultado de uma simulação 
 # feita com os seguintes parametros:
@@ -75,17 +83,70 @@ def buck_trapezium_discretization(n):
 
     return t, iL, vC
 
+def plot_erro_relativo_medio(F_MULTIPLIER, t_qs, iL_qs, vC_qs):
+    # Listas para armazenar os erros
+    err_iL_eul, err_vC_eul = [], []
+    err_iL_trap, err_vC_trap = [], []
+    
+    n_sorted = sorted(F_MULTIPLIER)
+    
+    for n in n_sorted:
+        # Roda as simulações para o 'n' atual
+        t_eul, iL_eul, vC_eul = buck_euler_discretization(n)
+        t_trap, iL_trap, vC_trap = buck_trapezium_discretization(n)
+        
+        # Interpola os dados do QSpice para os mesmos instantes de tempo da simulação Python
+        iL_qs_interp_eul = np.interp(t_eul, t_qs, iL_qs)
+        vC_qs_interp_eul = np.interp(t_eul, t_qs, vC_qs)
+        
+        iL_qs_interp_trap = np.interp(t_trap, t_qs, iL_qs)
+        vC_qs_interp_trap = np.interp(t_trap, t_qs, vC_qs)
+        
+        # Define um valor epsilon (muito pequeno) para evitar divisão por zero 
+        # nos instantes iniciais onde tensão e corrente podem ser nulas.
+        eps = 1e-8
+        
+        # Cálculo do erro percentual relativo médio (MAPE)
+        e_iL_eul = np.mean(np.abs((iL_eul - iL_qs_interp_eul) / np.maximum(np.abs(iL_qs_interp_eul), eps))) * 100
+        e_vC_eul = np.mean(np.abs((vC_eul - vC_qs_interp_eul) / np.maximum(np.abs(vC_qs_interp_eul), eps))) * 100
+        
+        e_iL_trap = np.mean(np.abs((iL_trap - iL_qs_interp_trap) / np.maximum(np.abs(iL_qs_interp_trap), eps))) * 100
+        e_vC_trap = np.mean(np.abs((vC_trap - vC_qs_interp_trap) / np.maximum(np.abs(vC_qs_interp_trap), eps))) * 100
+        
+        err_iL_eul.append(e_iL_eul)
+        err_vC_eul.append(e_vC_eul)
+        err_iL_trap.append(e_iL_trap)
+        err_vC_trap.append(e_vC_trap)
+
+    # ==========================================================
+    # PLOTAGEM DOS ERROS
+    # ==========================================================
+    fig, (ax_iL, ax_vC) = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # Gráfico de Erro da Corrente
+    ax_iL.plot(n_sorted, err_iL_eul, marker='o', linestyle='-', label='Euler')
+    ax_iL.plot(n_sorted, err_iL_trap, marker='s', linestyle='-', label='Trapézio')
+    ax_iL.set_title('Erro Relativo Médio - Corrente $i_L$', fontsize=FONT_TITLE)
+    ax_iL.set_xlabel('Fator n', fontsize=FONT_LABEL)
+    ax_iL.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
+    ax_iL.grid(True)
+    ax_iL.legend(fontsize=FONT_LEGEND)
+    ax_iL.tick_params(axis='both', labelsize=FONT_TICKS)
+    
+    # Gráfico de Erro da Tensão
+    ax_vC.plot(n_sorted, err_vC_eul, marker='o', linestyle='-', label='Euler')
+    ax_vC.plot(n_sorted, err_vC_trap, marker='s', linestyle='-', label='Trapézio')
+    ax_vC.set_title('Erro Relativo Médio - Tensão $v_C$', fontsize=FONT_TITLE)
+    ax_vC.set_xlabel('Fator n', fontsize=FONT_LABEL)
+    ax_vC.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
+    ax_vC.grid(True)
+    ax_vC.legend(fontsize=FONT_LEGEND)
+    ax_vC.tick_params(axis='both', labelsize=FONT_TICKS)
+    
+    fig.tight_layout()
+    fig.savefig('erro_relativo_completo.png', dpi=DPI)
+
 def main():
-    DPI = 500 # Resolução padrão para salvar as imagens
-    
-    # ==========================================================
-    # VARIÁVEIS DE CONFIGURAÇÃO DE FONTES
-    # ==========================================================
-    FONT_TITLE = 15    # Tamanho da fonte dos títulos dos subgráficos
-    FONT_LABEL = 13    # Tamanho da fonte dos rótulos dos eixos X e Y
-    FONT_TICKS = 12    # Tamanho da fonte dos números (ticks) dos eixos X e Y
-    FONT_LEGEND = 13 # Tamanho da fonte da legenda
-    
     # Lista contendo todos os eixos criados para aplicar a formatação padrão de forma limpa
     # (Vamos preencher e configurar depois)
     
@@ -179,6 +240,7 @@ def main():
     vC_qs = qspice_data[:, 1] 
     iL_qs = qspice_data[:, 2] 
 
+    plot_erro_relativo_medio(F_MULTIPLIER, t_qs, iL_qs, vC_qs)
 
     # ==========================================================
     # EXECUÇÃO E PLOTAGEM
