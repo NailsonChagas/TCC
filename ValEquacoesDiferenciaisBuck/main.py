@@ -76,104 +76,99 @@ def buck_trapezium_discretization(n):
     return t, iL, vC
 
 def main():
-    DPI = 300 # Definindo a resolução padrão para salvar as imagens
-
+    DPI = 500 # Resolução padrão para salvar as imagens
+    
+    # ==========================================================
+    # VARIÁVEIS DE CONFIGURAÇÃO DE FONTES
+    # ==========================================================
+    FONT_TITLE = 15    # Tamanho da fonte dos títulos dos subgráficos
+    FONT_LABEL = 13    # Tamanho da fonte dos rótulos dos eixos X e Y
+    FONT_TICKS = 12    # Tamanho da fonte dos números (ticks) dos eixos X e Y
+    FONT_LEGEND = 13 # Tamanho da fonte da legenda
+    
+    # Lista contendo todos os eixos criados para aplicar a formatação padrão de forma limpa
+    # (Vamos preencher e configurar depois)
+    
     # ==========================================================
     # IMAGENS COMPLETAS (Todo o intervalo de simulação)
     # ==========================================================
-    fig_iL, (ax_iL_eul, ax_iL_trap) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_iL.suptitle(r'Corrente no Indutor ($i_L$) - Completo', fontsize=14, fontweight='bold')
+    fig_iL, (ax_iL_eul, ax_iL_trap) = plt.subplots(1, 2, figsize=(14, 8))
     
-    ax_iL_eul.set_title('Método de Euler')
-    ax_iL_eul.set_ylabel('Corrente [A]')
-    ax_iL_eul.set_xlabel('Tempo [ms]')
-    ax_iL_eul.grid(True)
-    
-    ax_iL_trap.set_title('Método do Trapézio')
-    ax_iL_trap.set_ylabel('Corrente [A]')
-    ax_iL_trap.set_xlabel('Tempo [ms]')
-    ax_iL_trap.grid(True)
+    for ax in [ax_iL_eul, ax_iL_trap]:
+        ax.set_ylabel('Corrente [A]', fontsize=FONT_LABEL)
+        ax.set_xlabel('Tempo [ms]', fontsize=FONT_LABEL)
+        ax.grid(True)
+        ax.tick_params(axis='both', labelsize=FONT_TICKS)
+        
+    ax_iL_eul.set_title('Método de Euler', fontsize=FONT_TITLE)
+    ax_iL_trap.set_title('Método do Trapézio', fontsize=FONT_TITLE)
 
-    fig_vC, (ax_vC_eul, ax_vC_trap) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_vC.suptitle(r'Tensão no Capacitor ($v_C$) - Completo', fontsize=14, fontweight='bold')
+    fig_vC, (ax_vC_eul, ax_vC_trap) = plt.subplots(1, 2, figsize=(14, 8))
     
-    ax_vC_eul.set_title('Método de Euler')
-    ax_vC_eul.set_ylabel('Tensão [V]')
-    ax_vC_eul.set_xlabel('Tempo [ms]')
-    ax_vC_eul.grid(True)
-    
-    ax_vC_trap.set_title('Método do Trapézio')
-    ax_vC_trap.set_ylabel('Tensão [V]')
-    ax_vC_trap.set_xlabel('Tempo [ms]')
-    ax_vC_trap.grid(True)
+    for ax in [ax_vC_eul, ax_vC_trap]:
+        ax.set_ylabel('Tensão [V]', fontsize=FONT_LABEL)
+        ax.set_xlabel('Tempo [ms]', fontsize=FONT_LABEL)
+        ax.grid(True)
+        ax.tick_params(axis='both', labelsize=FONT_TICKS)
+        
+    ax_vC_eul.set_title('Método de Euler', fontsize=FONT_TITLE)
+    ax_vC_trap.set_title('Método do Trapézio', fontsize=FONT_TITLE)
 
 
     # ==========================================================
-    # IMAGENS REGIME PERMANENTE (Zoom)
+    # IMAGENS REGIME PERMANENTE
     # ==========================================================
-    fig_iL_z, (ax_iL_eul_z, ax_iL_trap_z) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_iL_z.suptitle(r'Corrente no Indutor ($i_L$) - Regime Permanente (0.2ms a 0.225ms)', fontsize=14, fontweight='bold')
-    ax_iL_eul_z.set_title('Método de Euler (Zoom)')
-    ax_iL_eul_z.set_ylabel('Corrente [A]')
-    ax_iL_eul_z.set_xlabel('Tempo [ms]')
-    ax_iL_eul_z.grid(True)
-    ax_iL_eul_z.set_xlim(0.2, 0.225)
+    fig_iL_z, (ax_iL_eul_z, ax_iL_trap_z) = plt.subplots(1, 2, figsize=(14, 8))
     
-    ax_iL_trap_z.set_title('Método do Trapézio (Zoom)')
-    ax_iL_trap_z.set_ylabel('Corrente [A]')
-    ax_iL_trap_z.set_xlabel('Tempo [ms]')
-    ax_iL_trap_z.grid(True)
-    ax_iL_trap_z.set_xlim(0.2, 0.225)
+    for ax in [ax_iL_eul_z, ax_iL_trap_z]:
+        ax.set_ylabel('Corrente [A]', fontsize=FONT_LABEL)
+        ax.set_xlabel('Tempo [ms]', fontsize=FONT_LABEL)
+        ax.grid(True)
+        ax.set_xlim(0.2, 0.225)
+        ax.tick_params(axis='both', labelsize=FONT_TICKS)
+        
+    ax_iL_eul_z.set_title('Método de Euler', fontsize=FONT_TITLE)
+    ax_iL_trap_z.set_title('Método do Trapézio', fontsize=FONT_TITLE)
 
-    fig_vC_z, (ax_vC_eul_z, ax_vC_trap_z) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_vC_z.suptitle(r'Tensão no Capacitor ($v_C$) - Regime Permanente (0.2ms a 0.225ms)', fontsize=14, fontweight='bold')
-    ax_vC_eul_z.set_title('Método de Euler (Zoom)')
-    ax_vC_eul_z.set_ylabel('Tensão [V]')
-    ax_vC_eul_z.set_xlabel('Tempo [ms]')
-    ax_vC_eul_z.grid(True)
-    ax_vC_eul_z.set_xlim(0.2, 0.225)
+    fig_vC_z, (ax_vC_eul_z, ax_vC_trap_z) = plt.subplots(1, 2, figsize=(14, 8))
     
-    ax_vC_trap_z.set_title('Método do Trapézio (Zoom)')
-    ax_vC_trap_z.set_ylabel('Tensão [V]')
-    ax_vC_trap_z.set_xlabel('Tempo [ms]')
-    ax_vC_trap_z.grid(True)
-    ax_vC_trap_z.set_xlim(0.2, 0.225)
+    for ax in [ax_vC_eul_z, ax_vC_trap_z]:
+        ax.set_ylabel('Tensão [V]', fontsize=FONT_LABEL)
+        ax.set_xlabel('Tempo [ms]', fontsize=FONT_LABEL)
+        ax.grid(True)
+        ax.set_xlim(0.2, 0.225)
+        ax.tick_params(axis='both', labelsize=FONT_TICKS)
+        
+    ax_vC_eul_z.set_title('Método de Euler', fontsize=FONT_TITLE)
+    ax_vC_trap_z.set_title('Método do Trapézio', fontsize=FONT_TITLE)
 
 
     # ==========================================================
     # IMAGENS REGIME TRANSITÓRIO
     # ==========================================================
-    fig_iL_trans, (ax_iL_eul_trans, ax_iL_trap_trans) = plt.subplots(1, 2, figsize=(14, 5))
-    # Título corrigido para refletir o transitório
-    fig_iL_trans.suptitle(r'Corrente no Indutor ($i_L$) - Regime Transitório (0.0ms a 0.12ms)', fontsize=14, fontweight='bold')
+    fig_iL_trans, (ax_iL_eul_trans, ax_iL_trap_trans) = plt.subplots(1, 2, figsize=(14, 8))
     
-    ax_iL_eul_trans.set_title('Método de Euler')
-    ax_iL_eul_trans.set_ylabel('Corrente [A]')
-    ax_iL_eul_trans.set_xlabel('Tempo [ms]')
-    ax_iL_eul_trans.grid(True)
-    ax_iL_eul_trans.set_xlim(0.0, 0.12)
-    
-    ax_iL_trap_trans.set_title('Método do Trapézio')
-    ax_iL_trap_trans.set_ylabel('Corrente [A]')
-    ax_iL_trap_trans.set_xlabel('Tempo [ms]')
-    ax_iL_trap_trans.grid(True)
-    ax_iL_trap_trans.set_xlim(0.0, 0.12)
+    for ax in [ax_iL_eul_trans, ax_iL_trap_trans]:
+        ax.set_ylabel('Corrente [A]', fontsize=FONT_LABEL)
+        ax.set_xlabel('Tempo [ms]', fontsize=FONT_LABEL)
+        ax.grid(True)
+        ax.set_xlim(0.0, 0.12)
+        ax.tick_params(axis='both', labelsize=FONT_TICKS)
+        
+    ax_iL_eul_trans.set_title('Método de Euler', fontsize=FONT_TITLE)
+    ax_iL_trap_trans.set_title('Método do Trapézio', fontsize=FONT_TITLE)
 
-    fig_vC_trans, (ax_vC_eul_trans, ax_vC_trap_trans) = plt.subplots(1, 2, figsize=(14, 5))
-    # Título corrigido para refletir o transitório
-    fig_vC_trans.suptitle(r'Tensão no Capacitor ($v_C$) - Regime Transitório (0.0ms a 0.12ms)', fontsize=14, fontweight='bold')
+    fig_vC_trans, (ax_vC_eul_trans, ax_vC_trap_trans) = plt.subplots(1, 2, figsize=(14, 8))
     
-    ax_vC_eul_trans.set_title('Método de Euler')
-    ax_vC_eul_trans.set_ylabel('Tensão [V]')
-    ax_vC_eul_trans.set_xlabel('Tempo [ms]')
-    ax_vC_eul_trans.grid(True)
-    ax_vC_eul_trans.set_xlim(0.0, 0.12)
-    
-    ax_vC_trap_trans.set_title('Método do Trapézio')
-    ax_vC_trap_trans.set_ylabel('Tensão [V]')
-    ax_vC_trap_trans.set_xlabel('Tempo [ms]')
-    ax_vC_trap_trans.grid(True)
-    ax_vC_trap_trans.set_xlim(0.0, 0.12)
+    for ax in [ax_vC_eul_trans, ax_vC_trap_trans]:
+        ax.set_ylabel('Tensão [V]', fontsize=FONT_LABEL)
+        ax.set_xlabel('Tempo [ms]', fontsize=FONT_LABEL)
+        ax.grid(True)
+        ax.set_xlim(0.0, 0.12)
+        ax.tick_params(axis='both', labelsize=FONT_TICKS)
+        
+    ax_vC_eul_trans.set_title('Método de Euler', fontsize=FONT_TITLE)
+    ax_vC_trap_trans.set_title('Método do Trapézio', fontsize=FONT_TITLE)
 
 
     # ==========================================================
@@ -220,11 +215,11 @@ def main():
     for ax_target in [ax_vC_eul, ax_vC_trap, ax_vC_eul_z, ax_vC_trap_z, ax_vC_eul_trans, ax_vC_trap_trans]:
         ax_target.plot(t_qs * 1000, vC_qs, **qs_style)
         
-    # Adiciona as legendas em todas as janelas (incluindo as novas do transitório)
+    # Adiciona as legendas no canto inferior direito usando o tamanho configurado
     for ax in [ax_iL_eul, ax_iL_trap, ax_vC_eul, ax_vC_trap, 
                ax_iL_eul_z, ax_iL_trap_z, ax_vC_eul_z, ax_vC_trap_z,
                ax_iL_eul_trans, ax_iL_trap_trans, ax_vC_eul_trans, ax_vC_trap_trans]:
-        ax.legend(loc='lower right', fontsize='small')
+        ax.legend(loc='lower right', fontsize=FONT_LEGEND)
     
     # Ajusta o espaçamento interno de todas as figuras
     fig_iL.tight_layout()
