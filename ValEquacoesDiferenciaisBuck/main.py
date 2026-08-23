@@ -99,40 +99,40 @@ def main():
 
 
     # ==========================================================
-    # IMAGENS COM ZOOM (0.2ms a 0.24ms)
+    # IMAGENS COM ZOOM (0.2ms a 0.225ms)
     # ==========================================================
     
     # --- IMAGEM 3: CORRENTE COM ZOOM ---
     fig_iL_z, (ax_iL_eul_z, ax_iL_trap_z) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_iL_z.suptitle('Corrente (iL) - ZOOM (0.2ms a 0.24ms)', fontsize=14, fontweight='bold')
+    fig_iL_z.suptitle('Corrente (iL) - ZOOM (0.2ms a 0.225ms)', fontsize=14, fontweight='bold')
     
     ax_iL_eul_z.set_title('Método de Euler (Zoom)')
     ax_iL_eul_z.set_ylabel('Corrente [A]')
     ax_iL_eul_z.set_xlabel('Tempo [ms]') # Atualizado para ms
     ax_iL_eul_z.grid(True)
-    ax_iL_eul_z.set_xlim(0.2, 0.24) # Ajustado para ms (0.0002s * 1000 = 0.2ms)
+    ax_iL_eul_z.set_xlim(0.2, 0.225) # Ajustado para ms (0.0002s * 1000 = 0.2ms)
     
     ax_iL_trap_z.set_title('Método do Trapézio (Zoom)')
     ax_iL_trap_z.set_ylabel('Corrente [A]')
     ax_iL_trap_z.set_xlabel('Tempo [ms]') # Atualizado para ms
     ax_iL_trap_z.grid(True)
-    ax_iL_trap_z.set_xlim(0.2, 0.24) # Ajustado para ms
+    ax_iL_trap_z.set_xlim(0.2, 0.225) # Ajustado para ms
 
     # --- IMAGEM 4: TENSÃO COM ZOOM ---
     fig_vC_z, (ax_vC_eul_z, ax_vC_trap_z) = plt.subplots(1, 2, figsize=(14, 5))
-    fig_vC_z.suptitle('Tensão (vC) - ZOOM (0.2ms a 0.24ms)', fontsize=14, fontweight='bold')
+    fig_vC_z.suptitle('Tensão (vC) - ZOOM (0.2ms a 0.225ms)', fontsize=14, fontweight='bold')
     
     ax_vC_eul_z.set_title('Método de Euler (Zoom)')
     ax_vC_eul_z.set_ylabel('Tensão [V]')
     ax_vC_eul_z.set_xlabel('Tempo [ms]') # Atualizado para ms
     ax_vC_eul_z.grid(True)
-    ax_vC_eul_z.set_xlim(0.2, 0.24) # Ajustado para ms
+    ax_vC_eul_z.set_xlim(0.2, 0.225) # Ajustado para ms
     
     ax_vC_trap_z.set_title('Método do Trapézio (Zoom)')
     ax_vC_trap_z.set_ylabel('Tensão [V]')
     ax_vC_trap_z.set_xlabel('Tempo [ms]') # Atualizado para ms
     ax_vC_trap_z.grid(True)
-    ax_vC_trap_z.set_xlim(0.2, 0.24) # Ajustado para ms
+    ax_vC_trap_z.set_xlim(0.2, 0.225) # Ajustado para ms
 
 
     # ==========================================================
