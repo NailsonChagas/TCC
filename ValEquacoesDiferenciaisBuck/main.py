@@ -1,6 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Dentro do arquivo buck.csv tenho o resultado de uma simulação 
+# feita com os seguintes parametros:
+# .tran 0 1m 0 20n
+# as 3 primeiras linhas são assim
+# "Time","V(n02)","I(L1)"
+# 0,2.0015322977629,0.0479983764451534
+# 3.2e-12,2.0015322977629,0.0479983764451534
+# no QSpice do conversor buck descrito abaixo:
+
 # Parametros do conversor buck
 Vs = 50          # Tensão de entrada [V]
 Fs = 50e3        # Frequência de chaveamento [Hz]
@@ -75,12 +84,12 @@ def main():
     
     ax_iL_eul.set_title('Método de Euler')
     ax_iL_eul.set_ylabel('Corrente [A]')
-    ax_iL_eul.set_xlabel('Tempo [ms]') # Atualizado para ms
+    ax_iL_eul.set_xlabel('Tempo [ms]')
     ax_iL_eul.grid(True)
     
     ax_iL_trap.set_title('Método do Trapézio')
     ax_iL_trap.set_ylabel('Corrente [A]')
-    ax_iL_trap.set_xlabel('Tempo [ms]') # Atualizado para ms
+    ax_iL_trap.set_xlabel('Tempo [ms]')
     ax_iL_trap.grid(True)
 
     # --- IMAGEM 2: TENSÃO COMPLETA ---
@@ -89,12 +98,12 @@ def main():
     
     ax_vC_eul.set_title('Método de Euler')
     ax_vC_eul.set_ylabel('Tensão [V]')
-    ax_vC_eul.set_xlabel('Tempo [ms]') # Atualizado para ms
+    ax_vC_eul.set_xlabel('Tempo [ms]')
     ax_vC_eul.grid(True)
     
     ax_vC_trap.set_title('Método do Trapézio')
     ax_vC_trap.set_ylabel('Tensão [V]')
-    ax_vC_trap.set_xlabel('Tempo [ms]') # Atualizado para ms
+    ax_vC_trap.set_xlabel('Tempo [ms]')
     ax_vC_trap.grid(True)
 
 
@@ -108,15 +117,15 @@ def main():
     
     ax_iL_eul_z.set_title('Método de Euler (Zoom)')
     ax_iL_eul_z.set_ylabel('Corrente [A]')
-    ax_iL_eul_z.set_xlabel('Tempo [ms]') # Atualizado para ms
+    ax_iL_eul_z.set_xlabel('Tempo [ms]')
     ax_iL_eul_z.grid(True)
-    ax_iL_eul_z.set_xlim(0.2, 0.225) # Ajustado para ms (0.0002s * 1000 = 0.2ms)
+    ax_iL_eul_z.set_xlim(0.2, 0.225)
     
     ax_iL_trap_z.set_title('Método do Trapézio (Zoom)')
     ax_iL_trap_z.set_ylabel('Corrente [A]')
-    ax_iL_trap_z.set_xlabel('Tempo [ms]') # Atualizado para ms
+    ax_iL_trap_z.set_xlabel('Tempo [ms]')
     ax_iL_trap_z.grid(True)
-    ax_iL_trap_z.set_xlim(0.2, 0.225) # Ajustado para ms
+    ax_iL_trap_z.set_xlim(0.2, 0.225)
 
     # --- IMAGEM 4: TENSÃO COM ZOOM ---
     fig_vC_z, (ax_vC_eul_z, ax_vC_trap_z) = plt.subplots(1, 2, figsize=(14, 5))
@@ -124,36 +133,60 @@ def main():
     
     ax_vC_eul_z.set_title('Método de Euler (Zoom)')
     ax_vC_eul_z.set_ylabel('Tensão [V]')
-    ax_vC_eul_z.set_xlabel('Tempo [ms]') # Atualizado para ms
+    ax_vC_eul_z.set_xlabel('Tempo [ms]')
     ax_vC_eul_z.grid(True)
-    ax_vC_eul_z.set_xlim(0.2, 0.225) # Ajustado para ms
+    ax_vC_eul_z.set_xlim(0.2, 0.225)
     
     ax_vC_trap_z.set_title('Método do Trapézio (Zoom)')
     ax_vC_trap_z.set_ylabel('Tensão [V]')
-    ax_vC_trap_z.set_xlabel('Tempo [ms]') # Atualizado para ms
+    ax_vC_trap_z.set_xlabel('Tempo [ms]')
     ax_vC_trap_z.grid(True)
-    ax_vC_trap_z.set_xlim(0.2, 0.225) # Ajustado para ms
+    ax_vC_trap_z.set_xlim(0.2, 0.225)
 
+
+    # ==========================================================
+    # CARREGAMENTO DOS DADOS DO QSPICE
+    # ==========================================================
+    qspice_data = np.loadtxt('buck.csv', delimiter=',', skiprows=1)  # Pula a primeira linha (cabeçalho) e separa pelos vírgulas
+    t_qs = qspice_data[:, 0]  # Coluna 0: Tempo
+    vC_qs = qspice_data[:, 1] # Coluna 1: Tensão V(n02)
+    iL_qs = qspice_data[:, 2] # Coluna 2: Corrente I(L1)
 
     # ==========================================================
     # EXECUÇÃO E PLOTAGEM
     # ==========================================================
     for n in sorted(F_MULTIPLIER):
-        # Executa as simulações uma única vez por 'n'
+        # Executa as simulações matemáticas
         t_eul, iL_eul, vC_eul = buck_euler_discretization(n)
         t_trap, iL_trap, vC_trap = buck_trapezium_discretization(n)
         
-        # Plota nos gráficos COMPLETOS (Multiplicando tempo por 1000)
-        ax_iL_eul.plot(t_eul * 1000, iL_eul, label=f'n={n}')
-        ax_iL_trap.plot(t_trap * 1000, iL_trap, label=f'n={n}')
-        ax_vC_eul.plot(t_eul * 1000, vC_eul, label=f'n={n}')
-        ax_vC_trap.plot(t_trap * 1000, vC_trap, label=f'n={n}')
+        # Plota nos gráficos COMPLETOS
+        ax_iL_eul.plot(t_eul * 1000, iL_eul, label=f'n={n}', alpha=0.8)
+        ax_iL_trap.plot(t_trap * 1000, iL_trap, label=f'n={n}', alpha=0.8)
+        ax_vC_eul.plot(t_eul * 1000, vC_eul, label=f'n={n}', alpha=0.8)
+        ax_vC_trap.plot(t_trap * 1000, vC_trap, label=f'n={n}', alpha=0.8)
 
-        # Plota nos gráficos COM ZOOM (Multiplicando tempo por 1000)
-        ax_iL_eul_z.plot(t_eul * 1000, iL_eul, label=f'n={n}')
-        ax_iL_trap_z.plot(t_trap * 1000, iL_trap, label=f'n={n}')
-        ax_vC_eul_z.plot(t_eul * 1000, vC_eul, label=f'n={n}')
-        ax_vC_trap_z.plot(t_trap * 1000, vC_trap, label=f'n={n}')
+        # Plota nos gráficos COM ZOOM
+        ax_iL_eul_z.plot(t_eul * 1000, iL_eul, label=f'n={n}', alpha=0.8)
+        ax_iL_trap_z.plot(t_trap * 1000, iL_trap, label=f'n={n}', alpha=0.8)
+        ax_vC_eul_z.plot(t_eul * 1000, vC_eul, label=f'n={n}', alpha=0.8)
+        ax_vC_trap_z.plot(t_trap * 1000, vC_trap, label=f'n={n}', alpha=0.8)
+
+    
+    qs_style = {'color': 'black', 'linewidth': 1.1, 'linestyle': '-', 'alpha': 0.5, 'label': 'QSpice'}
+    
+    # Corrente Completa
+    ax_iL_eul.plot(t_qs * 1000, iL_qs, **qs_style)
+    ax_iL_trap.plot(t_qs * 1000, iL_qs, **qs_style)
+    # Tensão Completa
+    ax_vC_eul.plot(t_qs * 1000, vC_qs, **qs_style)
+    ax_vC_trap.plot(t_qs * 1000, vC_qs, **qs_style)
+    # Corrente Zoom
+    ax_iL_eul_z.plot(t_qs * 1000, iL_qs, **qs_style)
+    ax_iL_trap_z.plot(t_qs * 1000, iL_qs, **qs_style)
+    # Tensão Zoom
+    ax_vC_eul_z.plot(t_qs * 1000, vC_qs, **qs_style)
+    ax_vC_trap_z.plot(t_qs * 1000, vC_qs, **qs_style)
         
     # Adiciona as legendas
     for ax in [ax_iL_eul, ax_iL_trap, ax_vC_eul, ax_vC_trap, 
@@ -166,8 +199,12 @@ def main():
     fig_iL_z.tight_layout()
     fig_vC_z.tight_layout()
     
-    # Exibe as 4 janelas
-    plt.show()
+    fig_iL.savefig('corrente_completa.png', dpi=300)
+    fig_vC.savefig('tensao_completa.png', dpi=300)
+    fig_iL_z.savefig('corrente_zoom.png', dpi=300)
+    fig_vC_z.savefig('tensao_zoom.png', dpi=300)
+
+    plt.close('all')
 
 if __name__ == "__main__":
     main()
