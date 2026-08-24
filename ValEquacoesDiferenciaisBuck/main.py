@@ -114,13 +114,14 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
     
     ax_iL.plot(n_sorted, err_iL_eul, marker='o', linestyle='-', label='Euler')
     ax_iL.plot(n_sorted, err_iL_trap, marker='s', linestyle='-', label='Trapézio')
-    ax_iL.set_title('Erro Relativo Médio - Corrente $i_L$', fontsize=FONT_TITLE)
+    ax_iL.set_title('Corrente $i_L$', fontsize=FONT_TITLE)
+    ax_iL.set_xticks(F_MULTIPLIER)
     ax_iL.set_xlabel('Fator n', fontsize=FONT_LABEL)
     ax_iL.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
     
     ax_vC.plot(n_sorted, err_vC_eul, marker='o', linestyle='-', label='Euler')
     ax_vC.plot(n_sorted, err_vC_trap, marker='s', linestyle='-', label='Trapézio')
-    ax_vC.set_title('Erro Relativo Médio - Tensão $v_C$', fontsize=FONT_TITLE)
+    ax_vC.set_title('Tensão $v_C$', fontsize=FONT_TITLE)
     ax_vC.set_xlabel('Fator n', fontsize=FONT_LABEL)
     ax_vC.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
     
@@ -152,17 +153,17 @@ def gerar_graficos_comparativos(resultados_sim, t_qs, var_qs, nome_var, ylabel, 
     ax_eul.set_title('Método de Euler', fontsize=FONT_TITLE)
     ax_trap.set_title('Método do Trapézio', fontsize=FONT_TITLE)
 
-    # Plotando linha base do QSpice
-    qs_style = {'color': 'black', 'linewidth': 1.1, 'linestyle': '-', 'alpha': 0.5, 'label': 'QSpice'}
-    ax_eul.plot(t_qs * 1000, var_qs, **qs_style)
-    ax_trap.plot(t_qs * 1000, var_qs, **qs_style)
-
     # Plotando os resultados das simulações iterativas
     for n in sorted(resultados_sim.keys()):
         dados = resultados_sim[n]
         
         ax_eul.plot(dados['t_eul'] * 1000, dados[f'{nome_var}_eul'], label=f'n={n}', alpha=0.8)
         ax_trap.plot(dados['t_trap'] * 1000, dados[f'{nome_var}_trap'], label=f'n={n}', alpha=0.8)
+
+    # Plotando linha base do QSpice
+    qs_style = {'color': 'black', 'linewidth': 1.1, 'linestyle': '-', 'alpha': 0.5, 'label': 'QSpice'}
+    ax_eul.plot(t_qs * 1000, var_qs, **qs_style)
+    ax_trap.plot(t_qs * 1000, var_qs, **qs_style)
 
     # Inserindo legendas
     ax_eul.legend(loc='lower right', fontsize=FONT_LEGEND)
