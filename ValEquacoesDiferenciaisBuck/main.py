@@ -115,7 +115,6 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
     ax_iL.plot(n_sorted, err_iL_eul, marker='o', linestyle='-', label='Euler')
     ax_iL.plot(n_sorted, err_iL_trap, marker='s', linestyle='-', label='Trapézio')
     ax_iL.set_title('Corrente $i_L$', fontsize=FONT_TITLE)
-    ax_iL.set_xticks(F_MULTIPLIER)
     ax_iL.set_xlabel('Fator n', fontsize=FONT_LABEL)
     ax_iL.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
     
@@ -125,7 +124,9 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
     ax_vC.set_xlabel('Fator n', fontsize=FONT_LABEL)
     ax_vC.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
     
+    # Aplica formatação comum para ambos os eixos
     for ax in [ax_iL, ax_vC]:
+        ax.set_xticks(F_MULTIPLIER)  # <-- Adicionado aqui para aplicar em ambos
         ax.grid(True)
         ax.legend(fontsize=FONT_LEGEND)
         ax.tick_params(axis='both', labelsize=FONT_TICKS)
