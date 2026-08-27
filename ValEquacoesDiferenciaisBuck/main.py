@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-  
+from scipy.linalg import expm
+
 # ==========================================================
 # VARIÁVEIS DE CONFIGURAÇÃO DE FONTES E PLOTAGEM
 # ==========================================================
@@ -49,6 +50,7 @@ def buck_euler_discretization(n):
 
     return t, iL, vC
 
+
 def buck_trapezium_discretization(n):
     Tsim = 1 / (n * Fs)
     n_points = int(T_END / Tsim)
@@ -75,11 +77,43 @@ def buck_trapezium_discretization(n):
 
     return t, iL, vC
 
+
+def buck_zoh_discretization(n):
+    Tsim = 1 / (n * Fs)
+    n_points = int(T_END / Tsim)
+
+    # Matrizes de Espaço de Estados (Contínuas)
+    A = np.array([[0, -1/L], 
+                  [1/C, -1/(R*C)]])
+    B1 = np.array([1/L, 0])
+    # B2 é [0 0]
+    
+    # Matrizes ZOH (Discretas)
+    Ad = expm(A * Tsim)
+    A_inv = np.linalg.inv(A)
+    Bd1 = A_inv @ (Ad - np.eye(2)) @ B1  # Matriz B_d da chave fechada
+    # Bd2 seria [0 0]
+
+    iL = np.zeros(n_points)
+    vC = np.zeros(n_points)
+    t = np.linspace(0, T_END, n_points)
+
+    for k in range(n_points - 1):
+        if (t[k] % Ts) < (D * Ts): # chave fechada
+            iL[k+1] = Ad[0,0]*iL[k] + Ad[0,1]*vC[k] + Bd1[0]*Vs
+            vC[k+1] = Ad[1,0]*iL[k] + Ad[1,1]*vC[k] + Bd1[1]*Vs
+        else: # chave aberta (Bd2 é matriz nula, zera as entradas)
+            iL[k+1] = Ad[0,0]*iL[k] + Ad[0,1]*vC[k]
+            vC[k+1] = Ad[1,0]*iL[k] + Ad[1,1]*vC[k]
+
+    return t, iL, vC
+
 # ==========================================================
 # FUNÇÕES DE CÁLCULO E PLOTAGEM
 # ==========================================================
 def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
     err_iL_eul, err_vC_eul = [], []
+    err_iL_zoh, err_vC_zoh = [], []
     err_iL_trap, err_vC_trap = [], []
     
     n_sorted = sorted(resultados_sim.keys())
@@ -91,6 +125,10 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
         # Interpolação Euler
         iL_qs_interp_eul = np.interp(dados['t_eul'], t_qs, iL_qs)
         vC_qs_interp_eul = np.interp(dados['t_eul'], t_qs, vC_qs)
+
+        # Interpolação ZOH
+        iL_qs_interp_zoh = np.interp(dados['t_zoh'], t_qs, iL_qs)
+        vC_qs_interp_zoh = np.interp(dados['t_zoh'], t_qs, vC_qs)
         
         # Interpolação Trapézio
         iL_qs_interp_trap = np.interp(dados['t_trap'], t_qs, iL_qs)
@@ -99,6 +137,10 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
         # MAPE Euler
         e_iL_eul = np.mean(np.abs((dados['iL_eul'] - iL_qs_interp_eul) / np.maximum(np.abs(iL_qs_interp_eul), eps))) * 100
         e_vC_eul = np.mean(np.abs((dados['vC_eul'] - vC_qs_interp_eul) / np.maximum(np.abs(vC_qs_interp_eul), eps))) * 100
+
+        # MAPE ZOH
+        e_iL_zoh = np.mean(np.abs((dados['iL_zoh'] - iL_qs_interp_zoh) / np.maximum(np.abs(iL_qs_interp_zoh), eps))) * 100
+        e_vC_zoh = np.mean(np.abs((dados['vC_zoh'] - vC_qs_interp_zoh) / np.maximum(np.abs(vC_qs_interp_zoh), eps))) * 100
         
         # MAPE Trapézio
         e_iL_trap = np.mean(np.abs((dados['iL_trap'] - iL_qs_interp_trap) / np.maximum(np.abs(iL_qs_interp_trap), eps))) * 100
@@ -106,19 +148,23 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
         
         err_iL_eul.append(e_iL_eul)
         err_vC_eul.append(e_vC_eul)
+        err_iL_zoh.append(e_iL_zoh)
+        err_vC_zoh.append(e_vC_zoh)
         err_iL_trap.append(e_iL_trap)
         err_vC_trap.append(e_vC_trap)
-
+        
     # Plotagem
     fig, (ax_iL, ax_vC) = plt.subplots(1, 2, figsize=(14, 6))
     
     ax_iL.plot(n_sorted, err_iL_eul, marker='o', linestyle='-', label='Euler')
+    ax_iL.plot(n_sorted, err_iL_zoh, marker='^', linestyle='-', label='ZOH')
     ax_iL.plot(n_sorted, err_iL_trap, marker='s', linestyle='-', label='Trapézio')
     ax_iL.set_title('Corrente $i_L$', fontsize=FONT_TITLE)
     ax_iL.set_xlabel('Fator n', fontsize=FONT_LABEL)
     ax_iL.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
     
     ax_vC.plot(n_sorted, err_vC_eul, marker='o', linestyle='-', label='Euler')
+    ax_vC.plot(n_sorted, err_vC_zoh, marker='^', linestyle='-', label='ZOH')
     ax_vC.plot(n_sorted, err_vC_trap, marker='s', linestyle='-', label='Trapézio')
     ax_vC.set_title('Tensão $v_C$', fontsize=FONT_TITLE)
     ax_vC.set_xlabel('Fator n', fontsize=FONT_LABEL)
@@ -126,7 +172,7 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
     
     # Aplica formatação comum para ambos os eixos
     for ax in [ax_iL, ax_vC]:
-        ax.set_xticks(F_MULTIPLIER)  # <-- Adicionado aqui para aplicar em ambos
+        ax.set_xticks(F_MULTIPLIER)
         ax.grid(True)
         ax.legend(fontsize=FONT_LEGEND)
         ax.tick_params(axis='both', labelsize=FONT_TICKS)
@@ -137,13 +183,12 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
 
 def gerar_graficos_comparativos(resultados_sim, t_qs, var_qs, nome_var, ylabel, filename, xlim=None):
     """
-    Função utilitária para gerar e salvar gráficos duplos (Euler e Trapézio)
-    evitando a repetição massiva de código.
+    Função utilitária para gerar e salvar gráficos múltiplos (Euler, Trapézio, ZOH).
     """
-    fig, (ax_eul, ax_trap) = plt.subplots(1, 2, figsize=(14, 8))
+    fig, (ax_eul, ax_zoh, ax_trap) = plt.subplots(1, 3, figsize=(18, 6))
     
     # Configuração base dos eixos
-    for ax in [ax_eul, ax_trap]:
+    for ax in [ax_eul, ax_zoh, ax_trap]:
         ax.set_ylabel(ylabel, fontsize=FONT_LABEL)
         ax.set_xlabel('Tempo [ms]', fontsize=FONT_LABEL)
         ax.grid(True)
@@ -153,6 +198,7 @@ def gerar_graficos_comparativos(resultados_sim, t_qs, var_qs, nome_var, ylabel, 
             
     ax_eul.set_title('Método de Euler', fontsize=FONT_TITLE)
     ax_trap.set_title('Método do Trapézio', fontsize=FONT_TITLE)
+    ax_zoh.set_title('Método ZOH', fontsize=FONT_TITLE)
 
     # Plotando os resultados das simulações iterativas
     for n in sorted(resultados_sim.keys()):
@@ -160,15 +206,18 @@ def gerar_graficos_comparativos(resultados_sim, t_qs, var_qs, nome_var, ylabel, 
         
         ax_eul.plot(dados['t_eul'] * 1000, dados[f'{nome_var}_eul'], label=f'n={n}', alpha=0.8)
         ax_trap.plot(dados['t_trap'] * 1000, dados[f'{nome_var}_trap'], label=f'n={n}', alpha=0.8)
+        ax_zoh.plot(dados['t_zoh'] * 1000, dados[f'{nome_var}_zoh'], label=f'n={n}', alpha=0.8)
 
     # Plotando linha base do QSpice
     qs_style = {'color': 'black', 'linewidth': 1.1, 'linestyle': '-', 'alpha': 0.5, 'label': 'QSpice'}
     ax_eul.plot(t_qs * 1000, var_qs, **qs_style)
     ax_trap.plot(t_qs * 1000, var_qs, **qs_style)
+    ax_zoh.plot(t_qs * 1000, var_qs, **qs_style)
 
     # Inserindo legendas
     ax_eul.legend(loc='lower right', fontsize=FONT_LEGEND)
     ax_trap.legend(loc='lower right', fontsize=FONT_LEGEND)
+    ax_zoh.legend(loc='lower right', fontsize=FONT_LEGEND)
 
     fig.tight_layout()
     fig.savefig(filename, dpi=DPI)
@@ -188,22 +237,24 @@ def main():
         print("Arquivo 'buck.csv' não encontrado. Certifique-se de que ele está na mesma pasta.")
         return
 
-    # 2. Execução das Simulações (Feito apenas UMA VEZ e armazenado)
+    # 2. Execução das Simulações
     resultados_sim = {}
     for n in F_MULTIPLIER:
         t_eul, iL_eul, vC_eul = buck_euler_discretization(n)
         t_trap, iL_trap, vC_trap = buck_trapezium_discretization(n)
+        t_zoh, iL_zoh, vC_zoh = buck_zoh_discretization(n)
+        
         resultados_sim[n] = {
             't_eul': t_eul, 'iL_eul': iL_eul, 'vC_eul': vC_eul,
-            't_trap': t_trap, 'iL_trap': iL_trap, 'vC_trap': vC_trap
+            't_trap': t_trap, 'iL_trap': iL_trap, 'vC_trap': vC_trap,
+            't_zoh': t_zoh, 'iL_zoh': iL_zoh, 'vC_zoh': vC_zoh
         }
 
-    # 3. Cálculo e Plotagem dos Erros (Reaproveitando os resultados calculados acima)
+    # 3. Cálculo e Plotagem dos Erros
     plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs)
 
-    # 4. Geração dos Gráficos de Corrente e Tensão (Utilizando a função genérica)
+    # 4. Geração dos Gráficos Comparativos (Três painéis)
     graficos = [
-        # (var_qs, nome_var, ylabel, filename, xlim)
         (iL_qs, 'iL', 'Corrente [A]', 'corrente_completa.png', None),
         (vC_qs, 'vC', 'Tensão [V]', 'tensao_completa.png', None),
         (iL_qs, 'iL', 'Corrente [A]', 'corrente_permanente.png', (0.2, 0.225)),
