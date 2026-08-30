@@ -42,7 +42,7 @@ L = G * H * C
 
 print(f"Polo Desejado (sd): {sd:.2f}")
 print(f"Posição do Zero do PI: {-z_pi:.2f}")
-print(f"Parâmetros calculados: KP = {KP:.6f}, KI = {KI:.2f}")
+print(f"Parâmetros calculados: KP = {KP}, KI = {KI}")
 print(f"\nControlador C(s):\n{C}")
 print(f"Malha aberta L(s):\n{L}")
 
@@ -52,6 +52,3 @@ plot_specification_region(ax, zeta_min=zeta, sigma_min=zeta*wn)
 fig.savefig('lr_pi_calculado.png', dpi=400, bbox_inches='tight')
 plt.show()
 plt.close('all')
-
-print(f"Kp: {KP}")
-print(f"Ki: {KI}")

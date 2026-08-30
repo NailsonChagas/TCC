@@ -1,11 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import expm
+import matplotlib.gridspec as gridspec # <-- Importação necessária para o novo layout
 
 # ==========================================================
 # VARIÁVEIS DE CONFIGURAÇÃO DE FONTES E PLOTAGEM
 # ==========================================================
-FONT_TITLE = 15    
+FONT_TITLE = 16    
 FONT_LABEL = 13    
 FONT_TICKS = 12    
 FONT_LEGEND = 13 
@@ -157,15 +158,15 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
     fig, (ax_iL, ax_vC) = plt.subplots(1, 2, figsize=(14, 6))
     
     ax_iL.plot(n_sorted, err_iL_eul, marker='o', linestyle='-', label='Euler')
-    ax_iL.plot(n_sorted, err_iL_zoh, marker='^', linestyle='-', label='ZOH')
     ax_iL.plot(n_sorted, err_iL_trap, marker='s', linestyle='-', label='Trapézio')
+    ax_iL.plot(n_sorted, err_iL_zoh, marker='^', linestyle='-', label='ZOH')
     ax_iL.set_title('Corrente $i_L$', fontsize=FONT_TITLE)
     ax_iL.set_xlabel('Fator n', fontsize=FONT_LABEL)
     ax_iL.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
     
     ax_vC.plot(n_sorted, err_vC_eul, marker='o', linestyle='-', label='Euler')
-    ax_vC.plot(n_sorted, err_vC_zoh, marker='^', linestyle='-', label='ZOH')
     ax_vC.plot(n_sorted, err_vC_trap, marker='s', linestyle='-', label='Trapézio')
+    ax_vC.plot(n_sorted, err_vC_zoh, marker='^', linestyle='-', label='ZOH')
     ax_vC.set_title('Tensão $v_C$', fontsize=FONT_TITLE)
     ax_vC.set_xlabel('Fator n', fontsize=FONT_LABEL)
     ax_vC.set_ylabel('Erro (%)', fontsize=FONT_LABEL)
@@ -183,12 +184,21 @@ def plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs):
 
 def gerar_graficos_comparativos(resultados_sim, t_qs, var_qs, nome_var, ylabel, filename, xlim=None):
     """
-    Função utilitária para gerar e salvar gráficos múltiplos (Euler, Trapézio, ZOH).
+    Função utilitária para gerar e salvar gráficos múltiplos usando GridSpec.
+    Layout: 2 linhas x 4 colunas virtuais.
+    - Linha 0 (Euler ocupa cols 0-1, Trapézio ocupa cols 2-3).
+    - Linha 1 (ZOH ocupa cols 1-2, ficando exatamente centralizado e com a mesma largura).
     """
-    fig, (ax_eul, ax_zoh, ax_trap) = plt.subplots(1, 3, figsize=(18, 6))
+    fig = plt.figure(figsize=(14, 10)) # Aumentamos a altura para comportar 2 linhas
+    gs = gridspec.GridSpec(2, 4, figure=fig)
+    
+    # Posicionamento na Grade (Grid)
+    ax_eul = fig.add_subplot(gs[0, 0:2])
+    ax_trap = fig.add_subplot(gs[0, 2:4])
+    ax_zoh = fig.add_subplot(gs[1, 1:3])
     
     # Configuração base dos eixos
-    for ax in [ax_eul, ax_zoh, ax_trap]:
+    for ax in [ax_eul, ax_trap, ax_zoh]:
         ax.set_ylabel(ylabel, fontsize=FONT_LABEL)
         ax.set_xlabel('Tempo [ms]', fontsize=FONT_LABEL)
         ax.grid(True)
@@ -253,7 +263,7 @@ def main():
     # 3. Cálculo e Plotagem dos Erros
     plot_erro_relativo_medio(resultados_sim, t_qs, iL_qs, vC_qs)
 
-    # 4. Geração dos Gráficos Comparativos (Três painéis)
+    # 4. Geração dos Gráficos Comparativos
     graficos = [
         (iL_qs, 'iL', 'Corrente [A]', 'corrente_completa.png', None),
         (vC_qs, 'vC', 'Tensão [V]', 'tensao_completa.png', None),

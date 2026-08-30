@@ -44,7 +44,6 @@ plt.axhline(y=1.05, color='r', linestyle=':', label='Limite de Sobressinal (5%)'
 plt.axhline(y=1.02, color='g', linestyle='--', label='Banda de 2% (Superior)')
 plt.axhline(y=0.98, color='g', linestyle='--', label='Banda de 2% (Inferior)')
 plt.axvline(x=0.5, color='purple', linestyle='-.', label='Limite de Tempo (0.5 ms)')
-plt.title('Validação da Resposta Transitória - Sistema Compensado')
 plt.xlabel('Tempo (ms)')
 plt.ylabel('Amplitude')
 plt.grid(True)
