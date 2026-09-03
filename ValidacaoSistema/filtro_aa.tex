@@ -1,0 +1,48 @@
+Para discretizar o filtro passa-baixa e obter a equação de diferenças, o método padrão para preservar as características de resposta em frequência é a **Transformada Bilinear (Método de Tustin)**.
+
+Considerando que a malha de controle digital normalmente opera na mesma frequência que o chaveamento, o período de amostragem $T_s$ é:
+
+$$T_s = \frac{1}{F_{sw}} = \frac{1}{50 \times 10^3} = 20 \times 10^{-6} \text{ s}$$
+
+A aproximação de Tustin estabelece a seguinte substituição para o domínio de tempo contínuo ($s$) para o domínio discreto ($z$):
+
+$$s = \frac{2}{T_s} \frac{1 - z^{-1}}{1 + z^{-1}} = 10^5 \left( \frac{1 - z^{-1}}{1 + z^{-1}} \right)$$
+
+Substituindo essa relação na função de transferência $H(s)$ fornecida:
+
+$$H(z) = \frac{9{,}87 \times 10^8}{\left( 10^5 \frac{1 - z^{-1}}{1 + z^{-1}} \right)^2 + 5{,}441 \times 10^4 \left( 10^5 \frac{1 - z^{-1}}{1 + z^{-1}} \right) + 9{,}87 \times 10^8}$$
+
+Para simplificar a equação, podemos extrair as potências de 10 e multiplicar o numerador e o denominador por $(1 + z^{-1})^2$:
+
+$$H(z) = \frac{9{,}87 \times 10^8 (1 + z^{-1})^2}{10^{10} (1 - z^{-1})^2 + 5{,}441 \times 10^9 (1 - z^{-1})(1 + z^{-1}) + 9{,}87 \times 10^8 (1 + z^{-1})^2}$$
+
+Dividindo todos os termos por $10^8$ para facilitar a álgebra:
+
+$$H(z) = \frac{9{,}87 (1 + z^{-1})^2}{100 (1 - z^{-1})^2 + 54{,}41 (1 - z^{-1})(1 + z^{-1}) + 9{,}87 (1 + z^{-1})^2}$$
+
+Expandindo os binômios $(1 \pm z^{-1})^2$ e agrupando os termos de mesma potência em $z$:
+
+* **Numerador:** $9{,}87 (1 + 2z^{-1} + z^{-2}) = 9{,}87 + 19{,}74z^{-1} + 9{,}87z^{-2}$
+* **Denominador (termo independente):** $100 + 54{,}41 + 9{,}87 = 164{,}28$
+* **Denominador (termo em $z^{-1}$):** $100(-2) + 54{,}41(0) + 9{,}87(2) = -200 + 19{,}74 = -180{,}26$
+* **Denominador (termo em $z^{-2}$):** $100(1) + 54{,}41(-1) + 9{,}87(1) = 100 - 54{,}41 + 9{,}87 = 55{,}46$
+
+Montando a função de transferência discreta $H(z)$:
+
+$$H(z) = \frac{9{,}87 + 19{,}74z^{-1} + 9{,}87z^{-2}}{164{,}28 - 180{,}26z^{-1} + 55{,}46z^{-2}}$$
+
+Para implementar o filtro em código (microcontrolador/DSP), o coeficiente de $z^0$ no denominador deve ser $1$. Dividindo todos os coeficientes por $164{,}28$:
+
+$$H(z) = \frac{Y(z)}{X(z)} = \frac{0{,}06008 + 0{,}12016z^{-1} + 0{,}06008z^{-2}}{1 - 1{,}09727z^{-1} + 0{,}33759z^{-2}}$$
+
+Multiplicando cruzado para passar a relação de entrada $X(z)$ e saída $Y(z)$ para o domínio do tempo discreto:
+
+$$Y(z) \left( 1 - 1{,}09727z^{-1} + 0{,}33759z^{-2} \right) = X(z) \left( 0{,}06008 + 0{,}12016z^{-1} + 0{,}06008z^{-2} \right)$$
+
+Aplicando a Transformada Z inversa, obtemos a **equação de diferenças** final, onde $y[k]$ é a saída filtrada atual e $x[k]$ é a leitura atual da entrada:
+
+$$y[k] - 1{,}09727y[k-1] + 0{,}33759y[k-2] = 0{,}06008x[k] + 0{,}12016x[k-1] + 0{,}06008x[k-2]$$
+
+Isolando o termo presente $y[k]$:
+
+$$y[k] = 1{,}09727y[k-1] - 0{,}33759y[k-2] + 0{,}06008x[k] + 0{,}12016x[k-1] + 0{,}06008x[k-2]$$
