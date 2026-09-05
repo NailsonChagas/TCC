@@ -49,6 +49,11 @@ errors = {
     'D':  {m: [] for m in methods}
 }
 
+# Variáveis para armazenar os dados para plotagem (n=10, n=100 e n=200)
+t_plot_10, vC_plot_10, vC_qspice_10, iL_plot_10, iL_qspice_10 = None, None, None, None, None
+t_plot_100, vC_plot_100, vC_qspice_100, iL_plot_100, iL_qspice_100 = None, None, None, None, None
+t_plot_200, vC_plot_200, vC_qspice_200, iL_plot_200, iL_qspice_200 = None, None, None, None, None
+
 # Função de erro relativo percentual (ignora instantes onde a ref é muito próxima de 0)
 def calc_mape(sim, ref, threshold):
     mask = np.abs(ref) > threshold
@@ -130,10 +135,34 @@ for f_mult in F_MULTIPLIERS:
                 
             D_array[k+1] = D_val
 
-        # Cálculo do erro ignorando sinais menores que o limiar (ex: 1V para tensão, 0.05 para corrente/D)
+        # Cálculo do erro ignorando sinais menores que o limiar
         errors['vC'][method].append(calc_mape(vC, vC_qspice, threshold=1.0))
         errors['iL'][method].append(calc_mape(iL, iL_qspice, threshold=0.05))
         errors['D'][method].append(calc_mape(D_array, D_qspice, threshold=0.05))
+        
+        # Salva os dados se o fator for 10
+        if f_mult == 10:
+            t_plot_10 = t_sim.copy()
+            vC_plot_10 = vC.copy()
+            vC_qspice_10 = vC_qspice.copy()
+            iL_plot_10 = iL.copy()
+            iL_qspice_10 = iL_qspice.copy()
+
+        # Salva os dados se o fator for 100
+        if f_mult == 100:
+            t_plot_100 = t_sim.copy()
+            vC_plot_100 = vC.copy()
+            vC_qspice_100 = vC_qspice.copy()
+            iL_plot_100 = iL.copy()
+            iL_qspice_100 = iL_qspice.copy()
+            
+        # Salva os dados se o fator for 200
+        if f_mult == 200:
+            t_plot_200 = t_sim.copy()
+            vC_plot_200 = vC.copy()
+            vC_qspice_200 = vC_qspice.copy()
+            iL_plot_200 = iL.copy()
+            iL_qspice_200 = iL_qspice.copy()
 
 # --- SALVAR RESULTADOS EM CSV ---
 df_resultados = pd.DataFrame({
@@ -145,6 +174,7 @@ df_resultados = pd.DataFrame({
 
 df_resultados.to_csv("resultados_erros_simulacao.csv", index=False)
 print("Resultados salvos com sucesso em 'resultados_erros_simulacao.csv'")
+
 
 # --- PLOTAGEM DOS ERROS ---
 fig, (ax_iL, ax_vC) = plt.subplots(1, 2, figsize=(14, 6))
@@ -182,5 +212,86 @@ ax_iL.set_xticks(ticks_to_show)
 ax_iL.yaxis.set_major_locator(MaxNLocator(nbins=20))
 
 fig.tight_layout()
-fig.savefig('erro_relativo.png', dpi=DPI)
+fig.savefig('erro_relativo_mf.png', dpi=DPI)
+
+
+# --- PLOTAGEM DA COMPARAÇÃO DOS SINAIS PARA FATOR n=10 ---
+if t_plot_10 is not None:
+    fig2, (ax2_iL, ax2_vC) = plt.subplots(1, 2, figsize=(14, 6))
+
+    ax2_vC.plot(t_plot_10, vC_qspice_10, label='QSPICE', color='black', linewidth=1.5, linestyle='--')
+    ax2_vC.plot(t_plot_10, vC_plot_10, label='Python', color='red', alpha=0.7, linewidth=1.5)
+    ax2_vC.set_title('Tensão $v_C$ (Fator n=10)', fontsize=FONT_TITLE)
+    ax2_vC.set_xlabel('Tempo (s)', fontsize=FONT_LABEL)
+    ax2_vC.set_ylabel('Tensão (V)', fontsize=FONT_LABEL)
+    ax2_vC.tick_params(axis='both', labelsize=FONT_TICKS)
+    ax2_vC.legend(fontsize=FONT_LEGEND)
+    ax2_vC.grid(True, which="both", ls="--", alpha=0.7)
+
+    ax2_iL.plot(t_plot_10, iL_qspice_10, label='QSPICE', color='black', linewidth=1.5, linestyle='--')
+    ax2_iL.plot(t_plot_10, iL_plot_10, label='Python', color='blue', alpha=0.7, linewidth=1.5)
+    ax2_iL.set_title('Corrente $i_L$ (Fator n=10)', fontsize=FONT_TITLE)
+    ax2_iL.set_xlabel('Tempo (s)', fontsize=FONT_LABEL)
+    ax2_iL.set_ylabel('Corrente (A)', fontsize=FONT_LABEL)
+    ax2_iL.tick_params(axis='both', labelsize=FONT_TICKS)
+    ax2_iL.legend(fontsize=FONT_LEGEND)
+    ax2_iL.grid(True, which="both", ls="--", alpha=0.7)
+
+    fig2.tight_layout()
+    fig2.savefig('comparacao_sinais_n10.png', dpi=DPI)
+
+
+# --- PLOTAGEM DA COMPARAÇÃO DOS SINAIS PARA FATOR n=100 ---
+if t_plot_100 is not None:
+    fig3, (ax3_iL, ax3_vC) = plt.subplots(1, 2, figsize=(14, 6))
+
+    ax3_vC.plot(t_plot_100, vC_qspice_100, label='QSPICE', color='black', linewidth=1.5, linestyle='--')
+    ax3_vC.plot(t_plot_100, vC_plot_100, label='Python', color='red', alpha=0.7, linewidth=1.5)
+    ax3_vC.set_title('Tensão $v_C$ (Fator n=100)', fontsize=FONT_TITLE)
+    ax3_vC.set_xlabel('Tempo (s)', fontsize=FONT_LABEL)
+    ax3_vC.set_ylabel('Tensão (V)', fontsize=FONT_LABEL)
+    ax3_vC.tick_params(axis='both', labelsize=FONT_TICKS)
+    ax3_vC.legend(fontsize=FONT_LEGEND)
+    ax3_vC.grid(True, which="both", ls="--", alpha=0.7)
+
+    ax3_iL.plot(t_plot_100, iL_qspice_100, label='QSPICE', color='black', linewidth=1.5, linestyle='--')
+    ax3_iL.plot(t_plot_100, iL_plot_100, label='Python', color='blue', alpha=0.7, linewidth=1.5)
+    ax3_iL.set_title('Corrente $i_L$ (Fator n=100)', fontsize=FONT_TITLE)
+    ax3_iL.set_xlabel('Tempo (s)', fontsize=FONT_LABEL)
+    ax3_iL.set_ylabel('Corrente (A)', fontsize=FONT_LABEL)
+    ax3_iL.tick_params(axis='both', labelsize=FONT_TICKS)
+    ax3_iL.legend(fontsize=FONT_LEGEND)
+    ax3_iL.grid(True, which="both", ls="--", alpha=0.7)
+
+    fig3.tight_layout()
+    fig3.savefig('comparacao_sinais_n100.png', dpi=DPI)
+
+
+# --- PLOTAGEM DA COMPARAÇÃO DOS SINAIS PARA FATOR n=200 ---
+if t_plot_200 is not None:
+    fig4, (ax4_iL, ax4_vC) = plt.subplots(1, 2, figsize=(14, 6))
+
+    ax4_vC.plot(t_plot_200, vC_qspice_200, label='QSPICE', color='black', linewidth=1.5, linestyle='--')
+    ax4_vC.plot(t_plot_200, vC_plot_200, label='Python', color='red', alpha=0.7, linewidth=1.5)
+    ax4_vC.set_title('Tensão $v_C$ (Fator n=200)', fontsize=FONT_TITLE)
+    ax4_vC.set_xlabel('Tempo (s)', fontsize=FONT_LABEL)
+    ax4_vC.set_ylabel('Tensão (V)', fontsize=FONT_LABEL)
+    ax4_vC.tick_params(axis='both', labelsize=FONT_TICKS)
+    ax4_vC.legend(fontsize=FONT_LEGEND)
+    ax4_vC.grid(True, which="both", ls="--", alpha=0.7)
+
+    ax4_iL.plot(t_plot_200, iL_qspice_200, label='QSPICE', color='black', linewidth=1.5, linestyle='--')
+    ax4_iL.plot(t_plot_200, iL_plot_200, label='Python', color='blue', alpha=0.7, linewidth=1.5)
+    ax4_iL.set_title('Corrente $i_L$ (Fator n=200)', fontsize=FONT_TITLE)
+    ax4_iL.set_xlabel('Tempo (s)', fontsize=FONT_LABEL)
+    ax4_iL.set_ylabel('Corrente (A)', fontsize=FONT_LABEL)
+    ax4_iL.tick_params(axis='both', labelsize=FONT_TICKS)
+    ax4_iL.legend(fontsize=FONT_LEGEND)
+    ax4_iL.grid(True, which="both", ls="--", alpha=0.7)
+
+    fig4.tight_layout()
+    fig4.savefig('comparacao_sinais_n200.png', dpi=DPI)
+
+
+# Mostrar todos os plots
 plt.show()
