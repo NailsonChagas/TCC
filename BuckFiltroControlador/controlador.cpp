@@ -32,31 +32,37 @@ int __stdcall DllMain(void *module, unsigned int reason, void *reserved) { retur
 #undef OUT2
 #undef CLK
 
-const double c1 = 0.001906;
-const double c2 = 0.00049680633;
+// Período de amostragem do controlador (50 kHz = 20 us)
+const double Ts = 1.0 / 50000.0; // Importante usar 1.0 para divisão flutuante
+const double c1 = 0.001 + (32.5 * Ts);
+const double c2 = (32.5 * Ts) - 0.001;
+
+// Configuração do Degrau de Tensão
+const double tempo_degrau = 0.003; // Tempo em segundos para o degrau (ex: 0.003 s = 3 ms)
+const double Vref_inicial  = 25.0;  // Valor inicial da referência
+const double Vref_incremento = 10.0; // Incremento a ser somado no degrau
 
 extern "C" __declspec(dllexport) void controlador(void **opaque, double t, union uData *data)
 {
-   double  IN   = data[0].d * (50.0 / 3.3); // ADC input
-   bool    CLK  = data[1].b; // input
-   bool   &OUT1 = data[2].b; // output -> pwm
-   double &OUT2 = data[3].d; // output -> duty cycle
+   double   IN   = data[0].d * (50.0 / 3.3); // ADC input
+   bool     CLK  = data[1].b; // input
+   bool    &OUT1 = data[2].b; // output -> pwm
+   double  &OUT2 = data[3].d; // output -> duty cycle
 
 // Implement module evaluation code here:
 
    // Variaveis do PWM
    static int counter = 0;
-   // Define a resolucao do PWM (ex: 1000 passos = incrementos de 0.1%).
-   // IMPORTANTE: A frequencia final do PWM depende do sinal de CLK (entrada).
-   // Formula: f_pwm = f_clk / counter_max
-   // Exemplo prático: Para obter um PWM final de 50 kHz com counter_max = 1000,
-   // a fonte de CLK no simulador DEVE estar configurada para 50 MHz (50k * 1000).
-   const int counter_max = 100;
+   const int counter_max = 10000;
 
    // Variaveis do controlador
-   static double Vref = 25.0;
+   static double Vref = Vref_inicial;
    static double U = 0, pastU = 0.0; // duty
    static double E = 0, pastE = 0.0; // erro
+
+   // Contador de ciclos do loop de controle
+   static int ciclos_controle = 0;
+   const int ciclos_limite = (int)(tempo_degrau / Ts); // Calcula quantos ciclos correspondem ao tempo configurado
 
    // Verifica borda de subida (CLK atual é true, estado anterior era false)
    static bool clk_state = false;
@@ -64,8 +70,17 @@ extern "C" __declspec(dllexport) void controlador(void **opaque, double t, union
 
       counter++;
 
+      // Executa a malha do controlador a cada período de amostragem Ts
       if (counter >= counter_max) {
          counter = 0;
+
+         // Lógica do degrau baseada na contagem do clock do micro
+         ciclos_controle++;
+         if (ciclos_controle >= ciclos_limite) {
+            Vref = Vref_inicial + Vref_incremento;
+         } else {
+            Vref = Vref_inicial;
+         }
 
          E = Vref - IN;
          U = pastU + c1 * E + c2 * pastE;
