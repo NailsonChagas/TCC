@@ -147,7 +147,7 @@ def plot_errors_vs_n(df):
     ax.set_xticks([1, 10, 100, 1000, 10000])
     
     plt.xlabel('Fator Multiplicador (n)', fontsize=FONT_LABEL)
-    plt.ylabel('Erro MAPE (%)', fontsize=FONT_LABEL)
+    plt.ylabel('Erro (%)', fontsize=FONT_LABEL)
     plt.grid(True, which="both", ls="--", alpha=0.6)
     plt.legend(fontsize=FONT_LEGEND)
     plt.tight_layout()
@@ -169,10 +169,10 @@ def plot_signals_comparison(saved_signals):
     figsize_aux = (10, 10)
     windows = [(0, 1), (2.5, 3), (3, 4), (0, 6)]
     window_titles = [
-        'Transitório (0 a 1 ms)', 
-        'Regime Permanente (2,5 a 3 ms)', 
-        r'Degrau de $V_{ref}$: 25 V $\rightarrow$ 35 V ($3$ a $4$ ms)', 
-        'Visão Geral (0 a 6 ms)'
+        'Regime Transitório', 
+        'Regime Permanente', 
+        r'Degrau de $V_{ref}$: 25 V $\rightarrow$ 35 V', 
+        'Visão Geral'
     ]
     
     for n in TARGET_PLOT_N:

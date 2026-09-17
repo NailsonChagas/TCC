@@ -21,5 +21,17 @@ EquacoesDiferenciaisBuck/*.op.raw
 teste
 EquacoesDiferenciaisBuck/validacao_20.mlx
 
+# CSVs são grande demais
+/*.csv
 **/*.csv
 **/**/*.csv
+BuckFiltroControlador/buck_filtro_controle.csv
+
+/*.qraw
+**/*.qraw
+**/**/*.qraw
+
+/*.qopraw
+**/*.qopraw
+**/**/*.qopraw
+

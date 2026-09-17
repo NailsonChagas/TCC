@@ -42,6 +42,7 @@ const double tempo_degrau = 0.003; // Tempo em segundos para o degrau (ex: 0.003
 const double Vref_inicial  = 25.0;  // Valor inicial da referência
 const double Vref_incremento = 10.0; // Incremento a ser somado no degrau
 
+
 extern "C" __declspec(dllexport) void controlador(void **opaque, double t, union uData *data)
 {
    double   IN   = data[0].d * (50.0 / 3.3); // ADC input
@@ -49,20 +50,14 @@ extern "C" __declspec(dllexport) void controlador(void **opaque, double t, union
    bool    &OUT1 = data[2].b; // output -> pwm
    double  &OUT2 = data[3].d; // output -> duty cycle
 
-// Implement module evaluation code here:
-
    // Variaveis do PWM
    static int counter = 0;
-   const int counter_max = 10000;
+   const int counter_max = 10000; // O CLK no QSPICE deve ser 500 MHz!
 
    // Variaveis do controlador
    static double Vref = Vref_inicial;
    static double U = 0, pastU = 0.0; // duty
    static double E = 0, pastE = 0.0; // erro
-
-   // Contador de ciclos do loop de controle
-   static int ciclos_controle = 0;
-   const int ciclos_limite = (int)(tempo_degrau / Ts); // Calcula quantos ciclos correspondem ao tempo configurado
 
    // Verifica borda de subida (CLK atual é true, estado anterior era false)
    static bool clk_state = false;
@@ -74,21 +69,20 @@ extern "C" __declspec(dllexport) void controlador(void **opaque, double t, union
       if (counter >= counter_max) {
          counter = 0;
 
-         // Lógica do degrau baseada na contagem do clock do micro
-         ciclos_controle++;
-         if (ciclos_controle >= ciclos_limite) {
-            Vref = Vref_inicial + Vref_incremento;
+         // A SOLUÇÃO: Usar a variável de tempo absoluto 't' do QSPICE
+         if (t >= tempo_degrau) {
+             Vref = Vref_inicial + Vref_incremento;
          } else {
-            Vref = Vref_inicial;
+             Vref = Vref_inicial;
          }
 
          E = Vref - IN;
          U = pastU + c1 * E + c2 * pastE;
 
-         if (U > 1.0) { // Saturação do sinal de controle (Duty Cycle entre 0.0 e 1.0)
-            U = 1.0;
+         if (U > 1.0) { // Saturação do sinal de controle
+             U = 1.0;
          } else if (U < 0.0) {
-            U = 0.0;
+             U = 0.0;
          }
 
          pastE = E;
@@ -102,7 +96,7 @@ extern "C" __declspec(dllexport) void controlador(void **opaque, double t, union
          OUT1 = 0;
       }
 
-      OUT2 = U; // sempre atualizar a saida com U para poder mostrar o duty no grafico
+      OUT2 = U; // sempre atualizar a saida
    }
 
    // Sempre atualiza o estado do clock para a próxima iteração
