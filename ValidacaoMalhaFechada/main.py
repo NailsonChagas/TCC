@@ -102,6 +102,13 @@ def simulate_buck_zoh(n, interp_vC, interp_iL, interp_D):
             iL[k+1] = Ad[0,0]*iL[k] + Ad[0,1]*vC[k] + Bd2[0][0]*V_S
             vC[k+1] = Ad[1,0]*iL[k] + Ad[1,1]*vC[k] + Bd2[1][0]*V_S
 
+        print("1")
+        print(Ad[0,0], Ad[0,1], Bd1[0][0]*V_S)
+        print(Ad[1,0], Ad[1,1], Bd1[1][0]*V_S)
+        print("2")
+        print(Ad[0,0], Ad[0,1], Bd2[0][0]*V_S)
+        print(Ad[1,0], Ad[1,1], Bd2[1][0]*V_S)
+
         if (k + 1) % n == 0:
             x_k2, x_k1, x_k = x_k1, x_k, vC[k+1]
             

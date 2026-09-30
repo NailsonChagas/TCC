@@ -153,3 +153,4 @@ class BuckConverterCCM:
             f"fs={self.fs}"
             ")"
         )
+
