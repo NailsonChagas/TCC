@@ -1,6 +1,7 @@
 import os
+import json
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from buck_converter import BuckConverterCCM, CCMError
@@ -62,9 +63,19 @@ class BuckSimulatorGUI:
             entry.pack(side=tk.RIGHT)
             self.entries[label_text] = entry
 
-        # Botão de Simulação (agora apenas imprime no terminal)
+        # Botão de Simulação
         self.btn_run = ttk.Button(self.left_frame, text="Executar Simulação", command=self.on_button_click)
-        self.btn_run.pack(fill=tk.X, pady=20)
+        self.btn_run.pack(fill=tk.X, pady=(20, 5))
+
+        # Frame para os botões de Salvar e Carregar
+        file_btn_frame = ttk.Frame(self.left_frame)
+        file_btn_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        self.btn_save = ttk.Button(file_btn_frame, text="Salvar Config.", command=self.save_config)
+        self.btn_save.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 2))
+        
+        self.btn_load = ttk.Button(file_btn_frame, text="Carregar Config.", command=self.load_config)
+        self.btn_load.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(2, 0))
 
         # Painel de Resultados Calculados
         self.results_var = tk.StringVar(value="")
@@ -79,6 +90,48 @@ class BuckSimulatorGUI:
         # Integra a figura do Matplotlib ao Tkinter
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.right_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+    def save_config(self):
+        """Abre uma janela para salvar os parâmetros atuais em um arquivo JSON."""
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("Arquivos JSON", "*.json"), ("Todos os arquivos", "*.*")],
+            title="Salvar Configuração"
+        )
+        if not filepath:
+            return # Usuário cancelou
+        
+        # Extrai os valores atuais do dicionário de inputs
+        data_to_save = {key: var.get() for key, var in self.inputs.items()}
+        
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(data_to_save, f, indent=4)
+        except Exception as e:
+            self.results_var.set(f"Erro ao salvar:\n{e}")
+            self.lbl_results.config(foreground="red")
+
+    def load_config(self):
+        """Abre uma janela para carregar parâmetros de um arquivo JSON."""
+        filepath = filedialog.askopenfilename(
+            filetypes=[("Arquivos JSON", "*.json"), ("Todos os arquivos", "*.*")],
+            title="Carregar Configuração"
+        )
+        if not filepath:
+            return # Usuário cancelou
+            
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                loaded_data = json.load(f)
+                
+            # Atualiza as variáveis (isso vai engatilhar o run_simulation automaticamente)
+            for key, value in loaded_data.items():
+                if key in self.inputs:
+                    self.inputs[key].set(value)
+                    
+        except Exception as e:
+            self.results_var.set(f"Erro ao carregar:\n{e}")
+            self.lbl_results.config(foreground="red")
 
     def on_button_click(self):
         # Ação acionada quando o botão é efetivamente clicado
@@ -122,7 +175,7 @@ class BuckSimulatorGUI:
             self.ax1.plot(time * 1e3, iL, linewidth=1.2, color="tab:blue")
             self.ax1.set_title("Corrente no Indutor")
             self.ax1.set_xlabel("Tempo (ms)")
-            self.ax1.set_ylabel("i_L (A)")
+            self.ax1.set_ylabel(r"$i_L$ (A)")
             self.ax1.grid(True, linestyle="--", alpha=0.5)
 
             # Atualiza Gráfico de Tensão
@@ -130,7 +183,7 @@ class BuckSimulatorGUI:
             self.ax2.plot(time * 1e3, vC, linewidth=1.2, color="tab:orange")
             self.ax2.set_title("Tensão de Saída")
             self.ax2.set_xlabel("Tempo (ms)")
-            self.ax2.set_ylabel("v_C (V)")
+            self.ax2.set_ylabel(r"$v_C$ (V)")
             self.ax2.grid(True, linestyle="--", alpha=0.5)
 
             # Desenha os gráficos atualizados no Canvas
