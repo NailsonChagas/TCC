@@ -1,4 +1,8 @@
-import subprocess
+import os
+import tkinter as tk
+from buck_gui import BuckSimulatorGUI
 
 if __name__ == "__main__":
-    subprocess.run(["streamlit", "run", "app.py"])
+    root = tk.Tk()
+    app = BuckSimulatorGUI(root)
+    root.mainloop()
