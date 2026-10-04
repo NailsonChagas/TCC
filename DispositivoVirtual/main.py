@@ -4,24 +4,48 @@ import time
 import math
 import fcntl
 
+DAC_MAX_VOLTAGE = 3.3
+DAC_BITS = 12
+DAC_LEVELS = (1 << DAC_BITS) - 1  # 4095 níveis (2^12 - 1)
+
 
 class VirtualUSBDevice:
-    def __init__(self, symlink_path: str = "/tmp/ttyVirtual0", dac_max_voltage: float = 3.3):
+    def __init__(self, symlink_path: str = "/tmp/ttyVirtual0"):
         self.symlink_path = symlink_path
         self.master_fd = None
         self.slave_fd = None
         self.slave_name = None
 
         # O DAC do microcontrolador sempre tem teto fixo em 3.3V
-        self.dac_max_v = dac_max_voltage        
-        
+        self.dac_max_v = DAC_MAX_VOLTAGE
+        self.dac_levels = DAC_LEVELS
+
         # O Vs que vem do payload será o teto físico do sistema (ex: 50.0V)
-        self.physical_max_v = 50.0  
-        
+        self.physical_max_v = 50.0
+
         # Fator de conversão inicial (3.3 / 50.0)
         self.conversion_factor = self.dac_max_v / self.physical_max_v
 
-        self.sine_freq = 50          # Frequência da senóide gerada [Hz]
+        self.sine_freq = 50  # Frequência da senóide gerada [Hz]
+
+    def quantize_dac(self, voltage: float) -> float:
+        """
+        Quantiza um valor de tensão imitando a resolução discreta do DAC em hardware.
+        """
+        # Saturação na faixa do DAC (0V a 3.3V)
+        if voltage < 0.0:
+            voltage = 0.0
+        elif voltage > self.dac_max_v:
+            voltage = self.dac_max_v
+
+        # Converte tensão para código digital
+        code = voltage * float(self.dac_levels) / self.dac_max_v
+
+        # Arredonda para o código inteiro mais próximo (equivalente a (unsigned int)(code + 0.5f))
+        code_quantized = int(code + 0.5)
+
+        # Converte novamente o código para tensão quantizada
+        return (float(code_quantized) * self.dac_max_v) / float(self.dac_levels)
 
     def start(self):
         """Cria o par de portas virtuais PTY e gera o link simbólico."""
@@ -44,29 +68,35 @@ class VirtualUSBDevice:
         print(f" Portas criadas: {self.slave_name}")
         print(f" Link disponível em: {self.symlink_path}")
         print(f" Conversão Ativa: 0 a Vs físico -> 0 a {self.dac_max_v}V no DAC")
+        print(f" Resolução do DAC: {DAC_BITS} bits ({self.dac_levels} níveis)")
         print(" Aguardando comandos da GUI do Simulador...")
         print("=" * 60)
 
     def _send_sine_stream_blocking(self, total_steps: int, fs: float):
         """
-        Gera o sinal físico unipolar (0 a Vs) e o converte estritamente para a faixa do DAC (0 a 3.3V).
+        Gera o sinal físico unipolar (0 a Vs), converte para a faixa do DAC (0 a 3.3V)
+        e aplica a quantização discreta do DAC.
         """
         print(f"[STREAM] Iniciando envio de {total_steps} pontos (fs = {fs:.2f} Hz)...")
         dt = 1.0 / fs
 
         for k in range(total_steps):
             elapsed = k * dt
-            
+
             # 1. Geração do valor físico unipolar na planta (0 a Vs, ex: 0 a 50V)
             normalized_sine = (1.0 + math.sin(2 * math.pi * self.sine_freq * elapsed)) / 2.0
             val_vC_physical = self.physical_max_v * normalized_sine  # Varia de 0 a Vs
-            val_iL_physical = (self.physical_max_v / 2.0) * normalized_sine # Proporcional para corrente
+            val_iL_physical = (self.physical_max_v / 2.0) * normalized_sine  # Proporcional para corrente
 
             # 2. Conversão estrita para o domínio do DAC (0 a 3.3V)
-            val_vC_dac = val_vC_physical * self.conversion_factor
-            val_iL_dac = val_iL_physical * self.conversion_factor
+            val_vC_dac_ideal = val_vC_physical * self.conversion_factor
+            val_iL_dac_ideal = val_iL_physical * self.conversion_factor
 
-            # Pacote enviado contendo os valores convertidos para o limite do DAC
+            # 3. Quantização dos sinais conforme a resolução em bits do DAC
+            val_vC_dac = self.quantize_dac(val_vC_dac_ideal)
+            val_iL_dac = self.quantize_dac(val_iL_dac_ideal)
+
+            # Pacote enviado contendo os valores quantizados para o limite do DAC
             telemetry_packet = f"DATA;{k};{elapsed};{val_iL_dac};{val_vC_dac}\n"
 
             written = False
@@ -105,17 +135,17 @@ class VirtualUSBDevice:
 
     def _handle_config(self, payload: str):
         parts = payload.split(";")
-        
+
         if len(parts) == 10:
             _, vs_str, ad00, ad01, bd10, ad10, ad11, bd11, fs_str, steps_str = parts
 
             try:
                 # O Vs recebido da GUI define a tensão física de entrada do Buck (ex: 50V)
                 self.physical_max_v = float(vs_str)
-                
+
                 # Recalcula o fator de conversão mantendo o DAC fixo em 3.3V
                 self.conversion_factor = self.dac_max_v / self.physical_max_v
-                
+
                 fs = float(fs_str)
                 total_steps = int(steps_str)
             except ValueError:
@@ -156,7 +186,7 @@ class VirtualUSBDevice:
                             self.process_command(line)
                 except (OSError, BlockingIOError):
                     pass
-                
+
                 time.sleep(0.01)
 
         except KeyboardInterrupt:
@@ -175,5 +205,5 @@ class VirtualUSBDevice:
 
 
 if __name__ == "__main__":
-    device = VirtualUSBDevice(symlink_path="/tmp/ttyVirtual0", dac_max_voltage=3.3)
+    device = VirtualUSBDevice(symlink_path="/tmp/ttyVirtual0")
     device.run_forever()
