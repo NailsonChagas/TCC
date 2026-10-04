@@ -60,6 +60,7 @@ class VirtualUSBDevice:
             written = False
             while not written:
                 try:
+                    print(k)
                     os.write(self.master_fd, telemetry_packet.encode("utf-8"))
                     written = True
                 except (OSError, BlockingIOError):

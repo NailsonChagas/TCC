@@ -46,6 +46,39 @@ class BuckConverterCCM:
             fs=fs,
         )
 
+    @classmethod
+    def from_circuit_components(
+        cls,
+        Vs: float,
+        Vo: float,
+        R: float,
+        L: float,
+        C: float,
+        fs: float = FS,
+    ) -> "BuckConverterCCM":
+        """
+        Cria um conversor Buck em CCM a partir dos componentes do circuito.
+
+        Este método deve ser utilizado quando os valores da resistência de
+        carga, indutância e capacitância já são conhecidos.
+
+        Args:
+            Vs: Tensão de entrada (V).
+            Vo: Tensão de saída (V).
+            R: Resistência da carga (Ω).
+            L: Indutância (H).
+            C: Capacitância (F).
+            fs: Frequência de chaveamento (Hz).
+
+        Returns:
+            Uma instância de ``BuckConverterCCM``.
+
+        Raises:
+            CCMError: Se a indutância informada não satisfizer a condição de
+                operação em modo de condução contínua (CCM).
+        """
+        return cls(Vs, Vo, R, L, C, fs)
+
     @property
     def D(self) -> float:
         """Razão cíclica nominal."""
