@@ -180,7 +180,7 @@ class VirtualUSBDevice:
             vC_val = next_vC
 
             # Atraso real para não travar a GUI (ajustar conforme necessidade)
-            time.sleep(0.01) 
+            time.sleep(dt) # time.sleep(0.001) -> colocar 0.001 se travar, por enquanto funcionou ok
 
         print(f"[STREAM] Transmissão concluída! ({total_steps} pontos enviados)")
 
