@@ -137,10 +137,9 @@ class BuckSimulatorGUI:
             self.combo_device.current(0)
 
     def _build_sidebar(self):
-        mode_str = "TESTE (Virtual)" if IS_TEST_MODE else "DEPLOY (Hardware Real)"
         ttk.Label(
             self.left_frame, 
-            text=f"Dispositivo Alvo [{mode_str}]", 
+            text="Dispositivo Alvo", 
             font=("Arial", 9, "bold")
         ).pack(fill=tk.X, pady=(0, 2))
 
@@ -179,7 +178,7 @@ class BuckSimulatorGUI:
 
         self.btn_run = ttk.Button(
             self.left_frame, 
-            text="Executar Simulação e Enviar", 
+            text="Executar Simulação", 
             command=self.on_button_click
         )
         self.btn_run.pack(fill=tk.X, pady=(15, 5))

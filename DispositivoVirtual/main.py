@@ -70,7 +70,7 @@ class VirtualUSBDevice:
         print(" Dispositivo Serial Virtual USB ativado!")
         print(f" Portas criadas: {self.slave_name}")
         print(f" Link disponível em: {self.symlink_path}")
-        print(f" Conversão Ativa: 0 a Vs físico -> 0 a {self.dac_max_v}V no DAC")
+        print(f" Conversão Ativa: 0 a {self.dac_max_v}V no DAC")
         print(f" Resolução do DAC: {DAC_BITS} bits ({self.dac_levels} níveis)")
         print(" Aguardando comandos da GUI do Simulador...")
         print("=" * 60)
