@@ -2,6 +2,7 @@ import os
 import pty
 import time
 import math
+import fcntl
 
 
 class VirtualUSBDevice:
@@ -20,6 +21,13 @@ class VirtualUSBDevice:
         self.master_fd, self.slave_fd = pty.openpty()
         self.slave_name = os.ttyname(self.slave_fd)
 
+        # =====================================================================
+        # PROTEÇÃO CONTRA TRAVAMENTO DE BUFFER (O_NONBLOCK)
+        # Permite que o os.write falhe graciosamente em vez de travar o script
+        # =====================================================================
+        flags = fcntl.fcntl(self.master_fd, fcntl.F_GETFL)
+        fcntl.fcntl(self.master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
         if os.path.exists(self.symlink_path):
             os.remove(self.symlink_path)
 
@@ -34,33 +42,34 @@ class VirtualUSBDevice:
 
     def _send_sine_stream_blocking(self, total_steps: int, fs: float):
         """
-        Envia exatamente N (total_steps) amostras da senóide de forma SÍNCRONA.
-        O passo de tempo dt é derivado diretamente de fs.
+        Envia exatamente N amostras de forma SÍNCRONA.
+        Trava o laço principal, mas gerencia inteligentemente o buffer da serial.
         """
         print(f"[STREAM] Iniciando envio de {total_steps} pontos (fs = {fs:.2f} Hz)...")
-        dt = 1.0 / fs  # Intervalo de tempo real por passo
+        dt = 1.0 / fs
 
         for k in range(total_steps):
             elapsed = k * dt
-            val = self.sine_amplitude * math.sin(2 * math.pi * self.sine_freq * elapsed)
+            val_iL = self.sine_amplitude/2 * math.sin(2 * math.pi * self.sine_freq * elapsed)
+            val_vC = self.sine_amplitude * math.sin(2 * math.pi * self.sine_freq * elapsed)
 
-            # Pacote de dados: DATA;step_index;tempo;valor\n
-            telemetry_packet = f"DATA;{k};{elapsed};{val}\n"
+            telemetry_packet = f"DATA;{k};{elapsed};{val_iL};{val_vC}\n"
 
-            try:
-                os.write(self.master_fd, telemetry_packet.encode("utf-8"))
-                print(telemetry_packet)
-            except OSError:
-                print("[STREAM] Erro de escrita. Conexão interrompida.")
-                break
+            # Tenta escrever. Se o buffer do SO estiver cheio, não trava: 
+            # apenas aguarda 2ms e tenta novamente.
+            written = False
+            while not written:
+                try:
+                    os.write(self.master_fd, telemetry_packet.encode("utf-8"))
+                    written = True
+                except (OSError, BlockingIOError):
+                    time.sleep(0.002)  # Pausa minúscula para a GUI esvaziar o buffer do outro lado
 
-            # Pequena pausa proporcional para simular a transmissão do hardware
             time.sleep(dt)
 
         print(f"[STREAM] Transmissão concluída! ({total_steps} pontos enviados)")
 
     def process_command(self, raw_line: str):
-        """Processa os comandos seriais recebidos e responde sequencialmente."""
         line = raw_line.strip()
         if not line:
             return
@@ -70,21 +79,21 @@ class VirtualUSBDevice:
         if line.startswith("CONFIG;"):
             self._handle_config(line)
         elif line == "PING":
-            os.write(self.master_fd, b"PONG\n")
+            try:
+                os.write(self.master_fd, b"PONG\n")
+            except Exception:
+                pass
             print("[TX] Enviado: PONG")
         else:
             print(f"[ERR] Comando não reconhecido: {line}")
-            os.write(self.master_fd, b"ERROR: UNKNOWN_CMD\n")
+            try:
+                os.write(self.master_fd, b"ERROR: UNKNOWN_CMD\n")
+            except Exception:
+                pass
 
     def _handle_config(self, payload: str):
-        """
-        Valida o pacote de 9 campos, envia OK\\n e bloqueia a execução
-        transmitindo a senóide até concluir total_steps.
-        """
         parts = payload.split(";")
         
-        # Valida se o payload contém os 9 campos esperados
-        # CONFIG ; Ad_00 ; Ad_01 ; Bd1_0 ; Ad_10 ; Ad_11 ; Bd1_1 ; fs ; total_steps
         if len(parts) == 9:
             _, ad00, ad01, bd10, ad10, ad11, bd11, fs_str, steps_str = parts
 
@@ -92,8 +101,7 @@ class VirtualUSBDevice:
                 fs = float(fs_str)
                 total_steps = int(steps_str)
             except ValueError:
-                print("[ERR] Parâmetros numéricos inválidos (fs ou total_steps).")
-                os.write(self.master_fd, b"ERROR: INVALID_PARAMETERS\n")
+                print("[ERR] Parâmetros numéricos inválidos.")
                 return
 
             print("--- Parâmetros de Discretização Atualizados ---")
@@ -102,33 +110,36 @@ class VirtualUSBDevice:
             print(f"  fs: {fs:.2f} Hz | Total Steps: {total_steps}")
             print("---------------------------------------------")
 
-            # 1. Envia a resposta de confirmação imediata para destravar a GUI
-            os.write(self.master_fd, b"OK\n")
-            print("[TX] Enviado: OK")
+            try:
+                os.write(self.master_fd, b"OK\n")
+                print("[TX] Enviado: OK")
+            except Exception:
+                pass
 
-            # 2. Bloqueia síncronamente enviando as amostras
+            # Bloqueia a execução (ignora novos comandos) até concluir o envio
             self._send_sine_stream_blocking(total_steps, fs)
 
         else:
             print(f"[ERR] Pacote incorreto. Esperado 9 campos, recebido {len(parts)}.")
-            os.write(self.master_fd, b"ERROR: INVALID_PAYLOAD_LENGTH\n")
 
     def run_forever(self):
-        """Loop contínuo de leitura e resposta na porta serial."""
         self.start()
         buffer = ""
 
         try:
             while True:
-                data = os.read(self.master_fd, 1024).decode("utf-8", errors="ignore")
-                if not data:
-                    continue
-
-                buffer += data
-
-                while "\n" in buffer:
-                    line, buffer = buffer.split("\n", 1)
-                    self.process_command(line)
+                try:
+                    data = os.read(self.master_fd, 1024).decode("utf-8", errors="ignore")
+                    if data:
+                        buffer += data
+                        while "\n" in buffer:
+                            line, buffer = buffer.split("\n", 1)
+                            self.process_command(line)
+                except (OSError, BlockingIOError):
+                    # Como o fd é não-bloqueante, os.read levanta erro se não houver dados. Ignoramos.
+                    pass
+                
+                time.sleep(0.01)
 
         except KeyboardInterrupt:
             print("\nEncerrando dispositivo virtual...")
@@ -136,7 +147,6 @@ class VirtualUSBDevice:
             self.cleanup()
 
     def cleanup(self):
-        """Remove links e fecha os descritores de arquivo."""
         if os.path.exists(self.symlink_path):
             os.remove(self.symlink_path)
         if self.master_fd:
