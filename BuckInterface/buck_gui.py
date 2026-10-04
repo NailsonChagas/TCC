@@ -25,6 +25,9 @@ class BuckSimulatorGUI:
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+        # Referência para armazenar o objeto do conversor ativo
+        self.current_buck = None
+
         # =====================================================================
         # Filas e Buffers para recepção em tempo real
         # =====================================================================
@@ -139,8 +142,6 @@ class BuckSimulatorGUI:
 
         ttk.Separator(self.left_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
 
-        # Seletor de Modo de Instanciação
-        # Seletor de Modo de Instanciação alternativo (sem bind)
         ttk.Label(self.left_frame, text="Modo de Entrada", font=("Arial", 9, "bold")).pack(anchor=tk.W)
         
         mode_combo = ttk.Combobox(
@@ -151,9 +152,7 @@ class BuckSimulatorGUI:
         )
         mode_combo.pack(fill=tk.X, pady=(2, 8))
         
-        # Usa o trace na StringVar para atualizar automaticamente ao mudar o valor
         self.mode_var.trace_add("write", lambda *args: self._rebuild_inputs_panel())
-        # Frame contenedor dinâmico para os campos de entrada
         self.inputs_container = ttk.Frame(self.left_frame)
         self.inputs_container.pack(fill=tk.X, pady=2)
 
@@ -196,7 +195,6 @@ class BuckSimulatorGUI:
         self.lbl_results.pack(fill=tk.X, pady=5)
 
     def _build_input_fields(self):
-        """Popula o container com os campos do modo selecionado."""
         active_inputs = self._get_active_inputs()
         self.entries = {}
         for label_text, string_var in active_inputs.items():
@@ -208,7 +206,6 @@ class BuckSimulatorGUI:
             self.entries[label_text] = entry
 
     def _rebuild_inputs_panel(self):
-        """Limpa e recria os campos de entrada ao trocar de modo."""
         for widget in self.inputs_container.winfo_children():
             widget.destroy()
         self._build_input_fields()
@@ -310,10 +307,9 @@ class BuckSimulatorGUI:
             self.modal_dialog.destroy()
 
     def on_button_click(self):
-        # 1. Sinaliza para parar qualquer thread serial anterior que ainda esteja viva
         self.cancel_flag = True
-        time.sleep(0.05) # Pequena pausa para a thread anterior liberar a porta
-        self.cancel_flag = False # Reseta a flag para a nova execução
+        time.sleep(0.05)
+        self.cancel_flag = False
 
         port = self.target_device_var.get()
         if not port or "Nenh" in port:
@@ -331,7 +327,6 @@ class BuckSimulatorGUI:
         N = int(active_inputs["N (f_sim = N * fs)"].get())
         sim_time_ms = float(active_inputs["Tempo [ms]"].get())
 
-        # Prepara os buffers
         self.rx_time.clear()
         self.rx_iL.clear()
         self.rx_vC.clear()
@@ -352,14 +347,13 @@ class BuckSimulatorGUI:
             fs_sim = N * buck.fs
             self.expected_steps = total_steps
 
-            payload = f"CONFIG;{Ad_00};{Ad_01};{Bd1_0};{Ad_10};{Ad_11};{Bd1_1};{fs_sim};{total_steps}\n"
+            payload = f"CONFIG;{buck.Vs};{Ad_00};{Ad_01};{Bd1_0};{Ad_10};{Ad_11};{Bd1_1};{fs_sim};{total_steps}\n"
 
             with serial.Serial(port, 115200, timeout=0.1) as ser:
                 ser.reset_input_buffer()
                 ser.write(payload.encode('ascii'))
                 ser.flush()
 
-                # 1. Aguarda o OK (ACK) do dispositivo
                 while not self.cancel_flag:
                     if ser.in_waiting > 0:
                         line = ser.readline().decode('utf-8', errors='ignore').strip()
@@ -372,10 +366,8 @@ class BuckSimulatorGUI:
                     self.root.after(0, lambda: self.lbl_status.config(foreground="orange"))
                     return
 
-                # 2. Confirmação Recebida! Abre a nova janela.
                 self.root.after(0, self._open_realtime_window)
 
-                # 3. Laço de Leitura Robusto em Rajada (Burst Mode)
                 rx_buffer = ""
                 received_count = 0
 
@@ -385,7 +377,6 @@ class BuckSimulatorGUI:
                         raw_bytes = ser.read(bytes_available)
                         rx_buffer += raw_bytes.decode('utf-8', errors='ignore')
 
-                        # Processa todas as linhas completas disponíveis no buffer
                         while "\n" in rx_buffer:
                             line, rx_buffer = rx_buffer.split("\n", 1)
                             line = line.strip()
@@ -397,9 +388,8 @@ class BuckSimulatorGUI:
                                     self.data_queue.put((float(elapsed), float(val_iL), float(val_vC)))
                                     received_count += 1
                     else:
-                        time.sleep(0.001) # Pequena pausa para aliviar a CPU se o buffer estiver vazio
+                        time.sleep(0.001)
 
-                # Garante que a thread espera a interface gráfica processar o resto da fila
                 while not self.data_queue.empty() and not self.cancel_flag:
                     time.sleep(0.01)
 
@@ -424,9 +414,8 @@ class BuckSimulatorGUI:
         self.rt_window.title("Monitoramento Serial - Em Tempo Real")
         self.rt_window.geometry("850x650")
 
-        # Garante que a referência é limpa e a thread para ao fechar a janela pelo 'X'
         def on_rt_close():
-            self.cancel_flag = True  # Para o loop de leitura serial pendente
+            self.cancel_flag = True 
             if self.rt_window is not None:
                 self.rt_window.destroy()
                 self.rt_window = None
@@ -487,9 +476,17 @@ class BuckSimulatorGUI:
         while not self.data_queue.empty():
             try:
                 t_val, iL_val, vC_val = self.data_queue.get_nowait()
+                
+                # Acessa o Vs diretamente através do objeto buck armazenado na GUI
+                Vs = self.current_buck.Vs if self.current_buck else float(self._get_active_inputs()["Vs [V]"].get())
+                dac_max = 3.3
+                
+                # Fator de conversão inverso (de DAC para Físico)
+                scale_factor = Vs / dac_max
+                
                 self.rx_time.append(t_val * 1e3) 
-                self.rx_iL.append(iL_val)
-                self.rx_vC.append(vC_val)
+                self.rx_iL.append(iL_val * scale_factor)
+                self.rx_vC.append(vC_val * scale_factor)
                 has_new_data = True
             except queue.Empty:
                 break
@@ -532,8 +529,8 @@ class BuckSimulatorGUI:
                 Vs = float(self.inputs_components["Vs [V]"].get())
                 Vo = float(self.inputs_components["Vo [V]"].get())
                 R = float(self.inputs_components["R [Ω]"].get())
-                L = float(self.inputs_components["L [mH]"].get()) * 1e-3  # Conversão de mH para H
-                C = float(self.inputs_components["C [µF]"].get()) * 1e-6  # Conversão de µF para F
+                L = float(self.inputs_components["L [mH]"].get()) * 1e-3 
+                C = float(self.inputs_components["C [µF]"].get()) * 1e-6 
                 fs = float(self.inputs_components["fs [Hz]"].get())
                 N = int(self.inputs_components["N (f_sim = N * fs)"].get())
                 sim_time_ms = float(self.inputs_components["Tempo [ms]"].get())
@@ -541,6 +538,9 @@ class BuckSimulatorGUI:
                 buck = BuckConverterCCM.from_circuit_components(
                     Vs=Vs, Vo=Vo, R=R, L=L, C=C, fs=fs
                 )
+
+            # Armazena o conversor atual na instância da GUI
+            self.current_buck = buck
 
             res_text = (
                 f"Resultados ({'Projeto' + (' [CCM]' if buck.L > buck.Lmin else ' [DCM!]') if mode=='Parâmetros de Projeto' else 'Componentes'}):\n"
@@ -577,6 +577,7 @@ class BuckSimulatorGUI:
             return buck
 
         except CCMError:
+            self.current_buck = None
             self.results_var.set("Erro: Operação em DCM detectada!\n(L <= Lmin)")
             self.lbl_results.config(foreground="red")
             self.ax1.clear()
@@ -585,6 +586,7 @@ class BuckSimulatorGUI:
             return None
             
         except ValueError:
+            self.current_buck = None
             self.results_var.set("Aguardando entrada válida...")
             self.lbl_results.config(foreground="orange")
             return None
