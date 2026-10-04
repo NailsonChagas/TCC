@@ -6,15 +6,22 @@ import fcntl
 
 
 class VirtualUSBDevice:
-    def __init__(self, symlink_path: str = "/tmp/ttyVirtual0"):
+    def __init__(self, symlink_path: str = "/tmp/ttyVirtual0", dac_max_voltage: float = 3.3):
         self.symlink_path = symlink_path
         self.master_fd = None
         self.slave_fd = None
         self.slave_name = None
 
-        # Parâmetros da Senóide
-        self.sine_freq = 50        # Frequência da senóide gerada [Hz]
-        self.sine_amplitude = 10.0   # Amplitude da senóide
+        # O DAC do microcontrolador sempre tem teto fixo em 3.3V
+        self.dac_max_v = dac_max_voltage        
+        
+        # O Vs que vem do payload será o teto físico do sistema (ex: 50.0V)
+        self.physical_max_v = 50.0  
+        
+        # Fator de conversão inicial (3.3 / 50.0)
+        self.conversion_factor = self.dac_max_v / self.physical_max_v
+
+        self.sine_freq = 50          # Frequência da senóide gerada [Hz]
 
     def start(self):
         """Cria o par de portas virtuais PTY e gera o link simbólico."""
@@ -23,7 +30,6 @@ class VirtualUSBDevice:
 
         # =====================================================================
         # PROTEÇÃO CONTRA TRAVAMENTO DE BUFFER (O_NONBLOCK)
-        # Permite que o os.write falhe graciosamente em vez de travar o script
         # =====================================================================
         flags = fcntl.fcntl(self.master_fd, fcntl.F_GETFL)
         fcntl.fcntl(self.master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
@@ -37,34 +43,39 @@ class VirtualUSBDevice:
         print(" Dispositivo Serial Virtual USB ativado!")
         print(f" Portas criadas: {self.slave_name}")
         print(f" Link disponível em: {self.symlink_path}")
+        print(f" Conversão Ativa: 0 a Vs físico -> 0 a {self.dac_max_v}V no DAC")
         print(" Aguardando comandos da GUI do Simulador...")
         print("=" * 60)
 
     def _send_sine_stream_blocking(self, total_steps: int, fs: float):
         """
-        Envia exatamente N amostras de forma SÍNCRONA.
-        Trava o laço principal, mas gerencia inteligentemente o buffer da serial.
+        Gera o sinal físico unipolar (0 a Vs) e o converte estritamente para a faixa do DAC (0 a 3.3V).
         """
         print(f"[STREAM] Iniciando envio de {total_steps} pontos (fs = {fs:.2f} Hz)...")
         dt = 1.0 / fs
 
         for k in range(total_steps):
             elapsed = k * dt
-            val_iL = self.sine_amplitude/2 * math.sin(2 * math.pi * self.sine_freq * elapsed)
-            val_vC = self.sine_amplitude * math.sin(2 * math.pi * self.sine_freq * elapsed)
+            
+            # 1. Geração do valor físico unipolar na planta (0 a Vs, ex: 0 a 50V)
+            normalized_sine = (1.0 + math.sin(2 * math.pi * self.sine_freq * elapsed)) / 2.0
+            val_vC_physical = self.physical_max_v * normalized_sine  # Varia de 0 a Vs
+            val_iL_physical = (self.physical_max_v / 2.0) * normalized_sine # Proporcional para corrente
 
-            telemetry_packet = f"DATA;{k};{elapsed};{val_iL};{val_vC}\n"
+            # 2. Conversão estrita para o domínio do DAC (0 a 3.3V)
+            val_vC_dac = val_vC_physical * self.conversion_factor
+            val_iL_dac = val_iL_physical * self.conversion_factor
 
-            # Tenta escrever. Se o buffer do SO estiver cheio, não trava: 
-            # apenas aguarda 2ms e tenta novamente.
+            # Pacote enviado contendo os valores convertidos para o limite do DAC
+            telemetry_packet = f"DATA;{k};{elapsed};{val_iL_dac};{val_vC_dac}\n"
+
             written = False
             while not written:
                 try:
-                    print(k)
                     os.write(self.master_fd, telemetry_packet.encode("utf-8"))
                     written = True
                 except (OSError, BlockingIOError):
-                    time.sleep(0.002)  # Pausa minúscula para a GUI esvaziar o buffer do outro lado
+                    time.sleep(0.002)
 
             time.sleep(dt)
 
@@ -95,10 +106,16 @@ class VirtualUSBDevice:
     def _handle_config(self, payload: str):
         parts = payload.split(";")
         
-        if len(parts) == 9:
-            _, ad00, ad01, bd10, ad10, ad11, bd11, fs_str, steps_str = parts
+        if len(parts) == 10:
+            _, vs_str, ad00, ad01, bd10, ad10, ad11, bd11, fs_str, steps_str = parts
 
             try:
+                # O Vs recebido da GUI define a tensão física de entrada do Buck (ex: 50V)
+                self.physical_max_v = float(vs_str)
+                
+                # Recalcula o fator de conversão mantendo o DAC fixo em 3.3V
+                self.conversion_factor = self.dac_max_v / self.physical_max_v
+                
                 fs = float(fs_str)
                 total_steps = int(steps_str)
             except ValueError:
@@ -106,6 +123,8 @@ class VirtualUSBDevice:
                 return
 
             print("--- Parâmetros de Discretização Atualizados ---")
+            print(f"  Vs Físico (Planta): {self.physical_max_v} V | Teto DAC: {self.dac_max_v} V")
+            print(f"  Fator de Conversão: {self.conversion_factor:.6f}")
             print(f"  Ad_00: {ad00} | Ad_01: {ad01} | Bd1_0: {bd10}")
             print(f"  Ad_10: {ad10} | Ad_11: {ad11} | Bd1_1: {bd11}")
             print(f"  fs: {fs:.2f} Hz | Total Steps: {total_steps}")
@@ -117,11 +136,10 @@ class VirtualUSBDevice:
             except Exception:
                 pass
 
-            # Bloqueia a execução (ignora novos comandos) até concluir o envio
             self._send_sine_stream_blocking(total_steps, fs)
 
         else:
-            print(f"[ERR] Pacote incorreto. Esperado 9 campos, recebido {len(parts)}.")
+            print(f"[ERR] Pacote incorreto. Esperado 10 campos, recebido {len(parts)}.")
 
     def run_forever(self):
         self.start()
@@ -137,7 +155,6 @@ class VirtualUSBDevice:
                             line, buffer = buffer.split("\n", 1)
                             self.process_command(line)
                 except (OSError, BlockingIOError):
-                    # Como o fd é não-bloqueante, os.read levanta erro se não houver dados. Ignoramos.
                     pass
                 
                 time.sleep(0.01)
@@ -158,5 +175,5 @@ class VirtualUSBDevice:
 
 
 if __name__ == "__main__":
-    device = VirtualUSBDevice(symlink_path="/tmp/ttyVirtual0")
+    device = VirtualUSBDevice(symlink_path="/tmp/ttyVirtual0", dac_max_voltage=3.3)
     device.run_forever()
