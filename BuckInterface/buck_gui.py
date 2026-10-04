@@ -343,8 +343,7 @@ class BuckSimulatorGUI:
 
     def _send_and_receive_serial(self, buck: BuckConverterCCM, N: int, sim_time: float, port: str):
         try:
-            Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, total_steps = buck.discretize_model(N, sim_time)
-            fs_sim = N * buck.fs
+            Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, fs_sim, total_steps = buck.discretize_model(N, sim_time)
             self.expected_steps = total_steps
 
             payload = f"CONFIG;{buck.Vs};{Ad_00};{Ad_01};{Bd1_0};{Ad_10};{Ad_11};{Bd1_1};{fs_sim};{total_steps}\n"

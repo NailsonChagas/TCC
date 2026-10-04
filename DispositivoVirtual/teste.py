@@ -8,8 +8,6 @@ DAC_MAX_VOLTAGE = 3.3
 DAC_BITS = 12
 DAC_LEVELS = (1 << DAC_BITS) - 1  # 4095 níveis (2^12 - 1)
 
-DUTY_CYCLE = 0.5
-N = 100  # Frequência de chaveamento real do conversor físico (5 kHz)
 
 class VirtualUSBDevice:
     def __init__(self, symlink_path: str = "/tmp/ttyVirtual0"):
@@ -28,13 +26,7 @@ class VirtualUSBDevice:
         # Fator de conversão inicial (3.3 / 50.0)
         self.conversion_factor = self.dac_max_v / self.physical_max_v
 
-        # Inicialização dos coeficientes do espaço de estados
-        self.ad00 = 0.0
-        self.ad01 = 0.0
-        self.bd10 = 0.0
-        self.ad10 = 0.0
-        self.ad11 = 0.0
-        self.bd11 = 0.0
+        self.sine_freq = 50  # Frequência da senóide gerada [Hz]
 
     def quantize_dac(self, voltage: float) -> float:
         """
@@ -73,84 +65,32 @@ class VirtualUSBDevice:
         print(" Aguardando comandos da GUI do Simulador...")
         print("=" * 60)
 
-    def _handle_config(self, payload: str):
-        parts = payload.split(";")
-
-        if len(parts) == 10:
-            _, vs_str, ad00, ad01, bd10, ad10, ad11, bd11, fs_str, steps_str = parts
-
-            try:
-                # O Vs recebido da GUI define a tensão física de entrada do Buck (ex: 50V)
-                self.physical_max_v = float(vs_str)
-
-                # Salva os coeficientes do espaço de estados
-                self.ad00 = float(ad00)
-                self.ad01 = float(ad01)
-                self.bd10 = float(bd10)
-                self.ad10 = float(ad10)
-                self.ad11 = float(ad11)
-                self.bd11 = float(bd11)
-                
-                # Recalcula o fator de conversão mantendo o DAC fixo em 3.3V
-                self.conversion_factor = self.dac_max_v / self.physical_max_v
-
-                # fs_str recebe fs_sim (Frequência sobreamostrada da simulação)
-                fs_sim = float(fs_str)
-                total_steps = int(steps_str)
-            except ValueError:
-                print("[ERR] Parâmetros numéricos inválidos.")
-                return
-
-            print("--- Parâmetros de Discretização Atualizados ---")
-            print(f"  Vs Físico (Planta): {self.physical_max_v} V | Teto DAC: {self.dac_max_v} V")
-            print(f"  Fator de Conversão: {self.conversion_factor:.6f}")
-            print(f"  Ad_00: {self.ad00} | Ad_01: {self.ad01} | Bd1_0: {self.bd10}")
-            print(f"  Ad_10: {self.ad10} | Ad_11: {self.ad11} | Bd1_1: {self.bd11}")
-            print(f"  fs_sim: {fs_sim:.2f} Hz | Total Steps: {total_steps}")
-            print("---------------------------------------------")
-
-            try:
-                os.write(self.master_fd, b"OK\n")
-                print("[TX] Enviado: OK")
-            except Exception:
-                pass
-
-            # Inicia a simulação com as matrizes configuradas
-            self._run_buck_simulation(total_steps, fs_sim)
-
-        else:
-            print(f"[ERR] Pacote incorreto. Esperado 10 campos, recebido {len(parts)}.")
-
-    def _run_buck_simulation(self, total_steps: int, fs_sim: float):
+    def _send_sine_stream_blocking(self, total_steps: int, fs: float):
         """
-        Gera o sinal simulando a planta do Buck com os coeficientes de espaço de estados,
-        converte para a faixa do DAC (0 a 3.3V) e aplica a quantização discreta do DAC.
+        Gera o sinal físico unipolar (0 a Vs), converte para a faixa do DAC (0 a 3.3V)
+        e aplica a quantização discreta do DAC.
         """
-        print(f"[STREAM] Iniciando simulação do Buck ({total_steps} pontos, fs_sim = {fs_sim:.2f} Hz)...")
-        
-        # O período de chaveamento fixo da planta física (5 kHz)
-        T_s = 1.0 / (fs_sim/N)
-        
-        # O passo de tempo da simulação de alta resolução (dt) baseado na sobreamostragem
-        dt = 1.0 / fs_sim 
-
-        # Condições iniciais
-        iL_val = 0.0
-        vC_val = 0.0
+        print(f"[STREAM] Iniciando envio de {total_steps} pontos (fs = {fs:.2f} Hz)...")
+        dt = 1.0 / fs
 
         for k in range(total_steps):
             elapsed = k * dt
 
-            # 1. Conversão para o domínio do DAC (0 a 3.3V)
-            val_vC_dac_ideal = vC_val * self.conversion_factor
-            val_iL_dac_ideal = iL_val * self.conversion_factor
+            # 1. Geração do valor físico unipolar na planta (0 a Vs, ex: 0 a 50V)
+            normalized_sine = (1.0 + math.sin(2 * math.pi * self.sine_freq * elapsed)) / 2.0
+            val_vC_physical = self.physical_max_v * normalized_sine  # Varia de 0 a Vs
+            val_iL_physical = (self.physical_max_v / 2.0) * normalized_sine  # Proporcional para corrente
 
-            # 2. Quantização dos sinais conforme a resolução do DAC
+            # 2. Conversão estrita para o domínio do DAC (0 a 3.3V)
+            val_vC_dac_ideal = val_vC_physical * self.conversion_factor
+            val_iL_dac_ideal = val_iL_physical * self.conversion_factor
+
+            # 3. Quantização dos sinais conforme a resolução em bits do DAC
             val_vC_dac = self.quantize_dac(val_vC_dac_ideal)
             val_iL_dac = self.quantize_dac(val_iL_dac_ideal)
 
-            # 3. Empacotamento e transmissão
-            telemetry_packet = f"DATA;{k};{elapsed:.6e};{val_iL_dac};{val_vC_dac}\n"
+            # Pacote enviado contendo os valores quantizados para o limite do DAC
+            telemetry_packet = f"DATA;{k};{elapsed};{val_iL_dac};{val_vC_dac}\n"
 
             written = False
             while not written:
@@ -160,22 +100,7 @@ class VirtualUSBDevice:
                 except (OSError, BlockingIOError):
                     time.sleep(0.002)
 
-            # 4. Atualização dos estados para k+1 (Simulação temporal)
-            # O resto da divisão funciona perfeitamente agora, pois dt é muito menor que T_s
-            if (elapsed % T_s) < (DUTY_CYCLE * T_s):  
-                # Chave Fechada
-                next_iL = self.ad00 * iL_val + self.ad01 * vC_val + self.bd10 * self.physical_max_v
-                next_vC = self.ad10 * iL_val + self.ad11 * vC_val + self.bd11 * self.physical_max_v
-            else:  
-                # Chave Aberta
-                next_iL = self.ad00 * iL_val + self.ad01 * vC_val
-                next_vC = self.ad10 * iL_val + self.ad11 * vC_val
-
-            iL_val = next_iL
-            vC_val = next_vC
-
-            # Atraso real para não travar a GUI (ajustar conforme necessidade)
-            time.sleep(0.01) 
+            time.sleep(dt)
 
         print(f"[STREAM] Transmissão concluída! ({total_steps} pontos enviados)")
 
@@ -200,6 +125,44 @@ class VirtualUSBDevice:
                 os.write(self.master_fd, b"ERROR: UNKNOWN_CMD\n")
             except Exception:
                 pass
+
+    def _handle_config(self, payload: str):
+        parts = payload.split(";")
+
+        if len(parts) == 10:
+            _, vs_str, ad00, ad01, bd10, ad10, ad11, bd11, fs_str, steps_str = parts
+
+            try:
+                # O Vs recebido da GUI define a tensão física de entrada do Buck (ex: 50V)
+                self.physical_max_v = float(vs_str)
+
+                # Recalcula o fator de conversão mantendo o DAC fixo em 3.3V
+                self.conversion_factor = self.dac_max_v / self.physical_max_v
+
+                fs = float(fs_str)
+                total_steps = int(steps_str)
+            except ValueError:
+                print("[ERR] Parâmetros numéricos inválidos.")
+                return
+
+            print("--- Parâmetros de Discretização Atualizados ---")
+            print(f"  Vs Físico (Planta): {self.physical_max_v} V | Teto DAC: {self.dac_max_v} V")
+            print(f"  Fator de Conversão: {self.conversion_factor:.6f}")
+            print(f"  Ad_00: {ad00} | Ad_01: {ad01} | Bd1_0: {bd10}")
+            print(f"  Ad_10: {ad10} | Ad_11: {ad11} | Bd1_1: {bd11}")
+            print(f"  fs: {fs:.2f} Hz | Total Steps: {total_steps}")
+            print("---------------------------------------------")
+
+            try:
+                os.write(self.master_fd, b"OK\n")
+                print("[TX] Enviado: OK")
+            except Exception:
+                pass
+
+            self._send_sine_stream_blocking(total_steps, fs)
+
+        else:
+            print(f"[ERR] Pacote incorreto. Esperado 10 campos, recebido {len(parts)}.")
 
     def run_forever(self):
         self.start()

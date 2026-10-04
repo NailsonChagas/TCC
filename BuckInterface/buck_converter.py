@@ -89,7 +89,7 @@ class BuckConverterCCM:
         """Indutância mínima para operação em CCM."""
         return (1 - self.D) * self.R / (2 * self.fs)
 
-    def discretize_model(self, N: int, sim_time: float) -> tuple[float, float, float, float, float, float, int]:
+    def discretize_model(self, N: int, sim_time: float) -> tuple[float, float, float, float, float, float, float, int]:
         """
         Discretiza o modelo em espaço de estados usando ZOH.
 
@@ -101,6 +101,8 @@ class BuckConverterCCM:
         total_steps : int
             Número total de pontos de simulação.
         """
+        fs_sim = self.fs * N
+
         T_s = 1.0 / self.fs
         timestep = T_s / N
         total_steps = int(round(sim_time / timestep))
@@ -124,6 +126,7 @@ class BuckConverterCCM:
             float(Ad[1, 0]),
             float(Ad[1, 1]),
             float(Bd1[1]),
+            fs_sim,
             total_steps,
         )
 
@@ -159,6 +162,7 @@ class BuckConverterCCM:
             Ad_10,
             Ad_11,
             Bd1_1,
+            fs_sim,
             total_steps,
         ) = self.discretize_model(N, sim_time)
 
@@ -170,8 +174,8 @@ class BuckConverterCCM:
         vC = np.zeros(total_steps)
 
         # Condição inicial
-        iL[0] = self.Vo / self.R
-        vC[0] = self.Vo
+        iL[0] = 0 # self.Vo / self.R
+        vC[0] = 0 # self.Vo
 
         # Simulação temporal
         for k in range(total_steps - 1):
