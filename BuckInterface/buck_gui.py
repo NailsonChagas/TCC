@@ -12,12 +12,8 @@ import serial.tools.list_ports
 
 from buck_converter import BuckConverterCCM, CCMError
 
-# ==============================================================================
-# VARIÁVEL GLOBAL DE CONFIGURAÇÃO
-# True  -> Exibe portas virtuais do socat (/tmp/ttyVirtual*)
-# False -> Exibe portas seriais/USB reais do sistema (/dev/ttyACM*, /dev/ttyUSB*)
-# ==============================================================================
 IS_TEST_MODE = True
+
 
 class BuckSimulatorGUI:
     def __init__(self, root):
@@ -25,14 +21,9 @@ class BuckSimulatorGUI:
         self.root.title("Simulador Conversor Buck CCM")
         self.root.geometry("950x670")
 
-        # Gerencia o evento de fechar a janela no "X" para matar o processo
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        # Configuração do Layout Principal
-        # ----------------------------------------------------------------------
-        # FIXAÇÃO DA LARGURA DA SIDEBAR:
-        # Define a largura exata do painel esquerdo e desativa a propagação de tamanho
-        # ----------------------------------------------------------------------
+        # Configuração do Layout Principal com Largura Fixa na Sidebar
         self.left_frame = ttk.Frame(root, padding="10", width=280)
         self.left_frame.pack(side=tk.LEFT, fill=tk.Y, expand=False)
         self.left_frame.pack_propagate(False)
@@ -40,7 +31,6 @@ class BuckSimulatorGUI:
         self.right_frame = ttk.Frame(root, padding="10")
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        # Variáveis de Entrada
         self.inputs = {
             "Vs [V]": tk.StringVar(value="50.0"),
             "Vo [V]": tk.StringVar(value="25.0"),
@@ -52,27 +42,23 @@ class BuckSimulatorGUI:
             "Tempo [ms]": tk.StringVar(value="20.0"),
         }
 
-        # Variável para o Dispositivo Serial Selecionado
         self.target_device_var = tk.StringVar()
+        self.cancel_flag = False  # Controle para cancelar espera manual
 
         self._build_input_panel()
         self._build_plot_panel()
 
-        # Adiciona um gatilho para rodar a simulação a cada alteração de texto
         for var in self.inputs.values():
             var.trace_add("write", self.run_simulation)
 
-        # Roda a simulação inicial ao abrir
         self.run_simulation()
 
     def on_closing(self):
-        """Encerra a aplicação completamente ao fechar a janela."""
         self.root.quit()
         self.root.destroy()
         os._exit(0)
 
     def _get_available_devices(self) -> list[str]:
-        """Detecta e retorna a lista de dispositivos seriais conforme a global IS_TEST_MODE."""
         if IS_TEST_MODE:
             virtual_ports = sorted(glob.glob("/tmp/ttyVirtual*"))
             if virtual_ports:
@@ -84,16 +70,12 @@ class BuckSimulatorGUI:
         return devices if devices else ["Nenhum dispositivo encontrado"]
 
     def refresh_devices(self):
-        """Atualiza a lista do Combobox de dispositivos."""
         devices = self._get_available_devices()
         self.combo_device["values"] = devices
         if devices:
             self.combo_device.current(0)
 
     def _build_input_panel(self):
-        # ----------------------------------------------------------------------
-        # Seletor de Dispositivo Alvo (Virtual ou Real)
-        # ----------------------------------------------------------------------
         mode_str = "TESTE (Virtual)" if IS_TEST_MODE else "DEPLOY (Hardware Real)"
         ttk.Label(
             self.left_frame, 
@@ -118,9 +100,6 @@ class BuckSimulatorGUI:
 
         ttk.Separator(self.left_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
 
-        # ----------------------------------------------------------------------
-        # Parâmetros de Entrada
-        # ----------------------------------------------------------------------
         ttk.Label(self.left_frame, text="Parâmetros de Projeto", font=("Arial", 10, "bold")).pack(pady=(5, 5))
 
         self.entries = {}
@@ -132,7 +111,6 @@ class BuckSimulatorGUI:
             entry.pack(side=tk.RIGHT)
             self.entries[label_text] = entry
 
-        # Botão de Simulação e Envio
         self.btn_run = ttk.Button(
             self.left_frame, 
             text="Executar Simulação e Enviar", 
@@ -140,7 +118,6 @@ class BuckSimulatorGUI:
         )
         self.btn_run.pack(fill=tk.X, pady=(15, 5))
 
-        # Frame para os botões de Salvar e Carregar
         file_btn_frame = ttk.Frame(self.left_frame)
         file_btn_frame.pack(fill=tk.X, pady=(0, 10))
         
@@ -150,7 +127,6 @@ class BuckSimulatorGUI:
         self.btn_load = ttk.Button(file_btn_frame, text="Carregar Config.", command=self.load_config)
         self.btn_load.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(2, 0))
 
-        # Indicador de Status da Serial (wraplength=250 evita esticar a sidebar)
         self.status_var = tk.StringVar(value="Status: Aguardando envio...")
         self.lbl_status = ttk.Label(
             self.left_frame, 
@@ -162,7 +138,6 @@ class BuckSimulatorGUI:
         )
         self.lbl_status.pack(fill=tk.X, pady=(2, 5))
 
-        # Painel de Resultados Calculados (wraplength=250 evita esticar a sidebar)
         self.results_var = tk.StringVar(value="")
         self.lbl_results = ttk.Label(
             self.left_frame, 
@@ -221,15 +196,57 @@ class BuckSimulatorGUI:
             self.results_var.set(f"Erro ao carregar:\n{e}")
             self.lbl_results.config(foreground="red")
 
+    def _show_loading_dialog(self):
+        """Cria uma janela pop-up MODAL que bloqueia a interface principal enquanto aguarda."""
+        self.modal_dialog = tk.Toplevel(self.root)
+        self.modal_dialog.title("Aguardando Dispositivo")
+        self.modal_dialog.geometry("350x150")
+        self.modal_dialog.resizable(False, False)
+        
+        # Faz a janela ficar por cima e bloqueia cliques na janela principal
+        self.modal_dialog.transient(self.root)
+        self.modal_dialog.grab_set()
+
+        # Centraliza o pop-up
+        x = self.root.winfo_x() + (self.root.winfo_width() // 2) - 175
+        y = self.root.winfo_y() + (self.root.winfo_height() // 2) - 75
+        self.modal_dialog.geometry(f"+{x}+{y}")
+
+        ttk.Label(
+            self.modal_dialog, 
+            text="⏳ Aguardando Configuração...\nEnviado pacote para o dispositivo.", 
+            font=("Arial", 10, "bold"),
+            justify=tk.CENTER
+        ).pack(pady=15)
+
+        progress = ttk.Progressbar(self.modal_dialog, mode="indeterminate")
+        progress.pack(fill=tk.X, padx=20, pady=5)
+        progress.start(10)
+
+        self.cancel_flag = False
+        def cancel_action():
+            self.cancel_flag = True
+            self._close_loading_dialog()
+
+        btn_cancel = ttk.Button(self.modal_dialog, text="Cancelar", command=cancel_action)
+        btn_cancel.pack(pady=10)
+
+        # Desabilita o botão 'X' da janela modal para forçar a usar o botão Cancelar
+        self.modal_dialog.protocol("WM_DELETE_WINDOW", lambda: None)
+
+    def _close_loading_dialog(self):
+        """Fecha a janela modal e devolve o foco para a GUI principal."""
+        if hasattr(self, 'modal_dialog') and self.modal_dialog.winfo_exists():
+            self.modal_dialog.grab_release()
+            self.modal_dialog.destroy()
+
     def on_button_click(self):
-        """Executa a simulação atualizada e dispara o envio serial em uma Thread separada."""
         port = self.target_device_var.get()
         if not port or "Nenh" in port:
             self.status_var.set("Erro: Nenhum dispositivo selecionado!")
             self.lbl_status.config(foreground="red")
             return
 
-        # Roda a simulação antes de enviar
         buck = self.run_simulation()
         if buck is None:
             self.status_var.set("Erro: Parâmetros inválidos no projeto.")
@@ -239,45 +256,54 @@ class BuckSimulatorGUI:
         N = int(self.inputs["N (f_sim = N * fs)"].get())
         sim_time_ms = float(self.inputs["Tempo [ms]"].get())
 
-        # Executa a comunicação serial assincronamente para não travar a tela
+        # Exibe o pop-up bloqueante
+        self._show_loading_dialog()
+
+        # Dispara a thread de envio
         threading.Thread(
-            target=self._send_discretization_parameters,
+            target=self._send_config_parameters,
             args=(buck, N, sim_time_ms / 1000.0, port),
             daemon=True
         ).start()
 
-    def _send_discretization_parameters(self, buck: BuckConverterCCM, N: int, sim_time: float, port: str):
-        """Calcula a discretização, envia via serial e aguarda confirmação (ACK)."""
-        self.btn_run.config(state="disabled")
-        self.status_var.set("Enviando e aguardando confirmação (ACK)...")
-        self.lbl_status.config(foreground="orange")
-
+    def _send_config_parameters(self, buck: BuckConverterCCM, N: int, sim_time: float, port: str):
+        """Envia os dados e FICA TRAVADO esperando a resposta 'OK' sem timeout fixo curto."""
         try:
             Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, total_steps = buck.discretize_model(N, sim_time)
+            payload = f"CONFIG;{Ad_00};{Ad_01};{Bd1_0};{Ad_10};{Ad_11};{Bd1_1};{buck.fs};{total_steps}\n"
 
-            payload = f"DISC;{Ad_00:.8e};{Ad_01:.8e};{Bd1_0:.8e};{Ad_10:.8e};{Ad_11:.8e};{Bd1_1:.8e};{total_steps}\n"
-
-            with serial.Serial(port, 115200, timeout=3.0) as ser:
+            # Timeout baixo na porta serial para poder checar o botão 'Cancelar' sem travar a thread
+            with serial.Serial(port, 115200, timeout=0.2) as ser:
                 ser.reset_input_buffer()
                 ser.write(payload.encode('ascii'))
                 ser.flush()
 
-                response = ser.readline().decode('utf-8', errors='ignore').strip()
+                # FICA EM LOOP BLOQUEADO até receber o "OK" ou o usuário cancelar
+                response = ""
+                while not self.cancel_flag:
+                    if ser.in_waiting > 0:
+                        line = ser.readline().decode('utf-8', errors='ignore').strip()
+                        if "OK" in line:
+                            response = line
+                            break
 
-                if "OK" in response:
-                    self.status_var.set("Sucesso: Dispositivo Configurado!")
-                    self.lbl_status.config(foreground="green")
-                else:
-                    msg = f"Falha: Sem ACK ('{response}' recebido)" if response else "Falha: Timeout sem resposta"
-                    self.status_var.set(msg)
-                    self.lbl_status.config(foreground="red")
+                    time.sleep(0.05)
+
+                # Atualiza a interface gráfica via thread principal
+                if self.cancel_flag:
+                    self.root.after(0, lambda: self.status_var.set("Envio cancelado pelo usuário."))
+                    self.root.after(0, lambda: self.lbl_status.config(foreground="orange"))
+                elif "OK" in response:
+                    self.root.after(0, lambda: self.status_var.set("Sucesso: Dispositivo Configurado!"))
+                    self.root.after(0, lambda: self.lbl_status.config(foreground="green"))
 
         except Exception as err:
-            self.status_var.set(f"Erro Serial: {err}")
-            self.lbl_status.config(foreground="red")
+            self.root.after(0, lambda: self.status_var.set(f"Erro Serial: {err}"))
+            self.root.after(0, lambda: self.lbl_status.config(foreground="red"))
         
         finally:
-            self.btn_run.config(state="normal")
+            # Garante o fechamento da janela modal bloqueante
+            self.root.after(0, self._close_loading_dialog)
 
     def run_simulation(self, *args) -> BuckConverterCCM | None:
         try:
