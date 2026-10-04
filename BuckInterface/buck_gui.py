@@ -28,6 +28,9 @@ class BuckSimulatorGUI:
         # Referência para armazenar o objeto do conversor ativo
         self.current_buck = None
 
+        # Controle de temporizador para limpar a label de status
+        self._status_timer = None
+
         # =====================================================================
         # Filas e Buffers para recepção em tempo real
         # =====================================================================
@@ -82,6 +85,22 @@ class BuckSimulatorGUI:
         self._trace_inputs()
 
         self.run_simulation()
+
+    def set_temporary_status(self, text: str, color: str = "black", timeout_ms: int = 5000):
+        """
+        Define a mensagem de status e programa seu cancelamento/limpeza após `timeout_ms`.
+        """
+        if self._status_timer is not None:
+            self.root.after_cancel(self._status_timer)
+            self._status_timer = None
+
+        self.status_var.set(text)
+        self.lbl_status.config(foreground=color)
+
+        if timeout_ms > 0:
+            self._status_timer = self.root.after(
+                timeout_ms, lambda: self.status_var.set("")
+            )
 
     def on_closing(self):
         self.root.quit()
@@ -174,7 +193,7 @@ class BuckSimulatorGUI:
         self.btn_load = ttk.Button(file_btn_frame, text="Carregar Config.", command=self.load_config)
         self.btn_load.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(2, 0))
 
-        self.status_var = tk.StringVar(value="Status: Aguardando envio...")
+        self.status_var = tk.StringVar(value="")
         self.lbl_status = ttk.Label(
             self.left_frame, 
             textvariable=self.status_var, 
@@ -313,14 +332,12 @@ class BuckSimulatorGUI:
 
         port = self.target_device_var.get()
         if not port or "Nenh" in port:
-            self.status_var.set("Erro: Nenhum dispositivo selecionado!")
-            self.lbl_status.config(foreground="red")
+            self.set_temporary_status("Erro: Nenhum dispositivo selecionado!", "red", 4000)
             return
 
         buck = self.run_simulation()
         if buck is None:
-            self.status_var.set("Erro: Parâmetros inválidos no projeto ou DCM detectado.")
-            self.lbl_status.config(foreground="red")
+            self.set_temporary_status("Erro: Parâmetros inválidos no projeto ou DCM detectado.", "red", 5000)
             return
 
         active_inputs = self._get_active_inputs()
@@ -346,7 +363,6 @@ class BuckSimulatorGUI:
             Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, fs_sim, total_steps = buck.discretize_model(N, sim_time)
             self.expected_steps = total_steps
 
-            # vC_max, iL_max, Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, fs_sim, total_steps
             payload = f"CONFIG;{buck.Vs};{buck.Vs/buck.R};{Ad_00};{Ad_01};{Bd1_0};{Ad_10};{Ad_11};{Bd1_1};{fs_sim};{total_steps}\n"
 
             with serial.Serial(port, 115200, timeout=0.1) as ser:
@@ -362,8 +378,7 @@ class BuckSimulatorGUI:
                     time.sleep(0.05)
 
                 if self.cancel_flag:
-                    self.root.after(0, lambda: self.status_var.set("Envio cancelado pelo utilizador."))
-                    self.root.after(0, lambda: self.lbl_status.config(foreground="orange"))
+                    self.root.after(0, lambda: self.set_temporary_status("Envio cancelado pelo utilizador.", "orange", 4000))
                     return
 
                 self.root.after(0, self._open_realtime_window)
@@ -394,12 +409,10 @@ class BuckSimulatorGUI:
                     time.sleep(0.01)
 
                 if received_count >= total_steps:
-                    self.root.after(0, lambda: self.status_var.set("Sucesso: Transmissão Serial Concluída!"))
-                    self.root.after(0, lambda: self.lbl_status.config(foreground="green"))
+                    self.root.after(0, lambda: self.set_temporary_status("Sucesso: Transmissão Serial Concluída!", "green", 5000))
 
         except Exception as err:
-            self.root.after(0, lambda: self.status_var.set(f"Erro Serial: {err}"))
-            self.root.after(0, lambda: self.lbl_status.config(foreground="red"))
+            self.root.after(0, lambda: self.set_temporary_status(f"Erro Serial: {err}", "red", 6000))
         
         finally:
             self.root.after(0, self._close_loading_dialog)
@@ -461,11 +474,9 @@ class BuckSimulatorGUI:
                 for t, il, vc in zip(self.rx_time, self.rx_iL, self.rx_vC):
                     writer.writerow([f"{t:.6f}", f"{il:.6f}", f"{vc:.6f}"])
                     
-            self.status_var.set(f"Sucesso: Dados exportados para {os.path.basename(filepath)}.")
-            self.lbl_status.config(foreground="green")
+            self.set_temporary_status(f"Sucesso: Dados exportados para {os.path.basename(filepath)}.", "green", 4000)
         except Exception as e:
-            self.status_var.set(f"Erro ao salvar CSV: {e}")
-            self.lbl_status.config(foreground="red")
+            self.set_temporary_status(f"Erro ao salvar CSV: {e}", "red", 5000)
 
     def _update_realtime_plot(self):
         if self.rt_window is None or not self.rt_window.winfo_exists():
@@ -477,12 +488,10 @@ class BuckSimulatorGUI:
             try:
                 t_val, iL_val, vC_val = self.data_queue.get_nowait()
                 
-                # Acessa o Vs diretamente através do objeto buck armazenado na GUI
                 Vs = self.current_buck.Vs if self.current_buck else float(self._get_active_inputs()["Vs [V]"].get())
                 R = self.current_buck.R if self.current_buck else float(self._get_active_inputs()["R [Ω]"].get())
                 dac_max = 3.3
                 
-                # Fator de conversão inverso (de DAC para Físico)
                 conversion_factor_vC = Vs / dac_max
                 conversion_factor_iL = (Vs/R) / dac_max
                 
@@ -496,13 +505,13 @@ class BuckSimulatorGUI:
         if has_new_data:
             self.rt_ax1.clear()
             self.rt_ax1.plot(self.rx_time, self.rx_iL, linewidth=1.2, color="tab:blue")
-            self.rt_ax1.set_ylabel(r"$i_L$ (A)")
+            self.rt_ax1.set_ylabel(r"\(i_L\) (A)")
             self.rt_ax1.grid(True, linestyle="--", alpha=0.5)
 
             self.rt_ax2.clear()
             self.rt_ax2.plot(self.rx_time, self.rx_vC, linewidth=1.2, color="tab:orange")
             self.rt_ax2.set_xlabel("Tempo (ms)")
-            self.rt_ax2.set_ylabel(r"$v_C$ (V)")
+            self.rt_ax2.set_ylabel(r"\(v_C\) (V)")
             self.rt_ax2.grid(True, linestyle="--", alpha=0.5)
 
             self.rt_canvas.draw_idle()
@@ -541,7 +550,6 @@ class BuckSimulatorGUI:
                     Vs=Vs, Vo=Vo, R=R, L=L, C=C, fs=fs
                 )
 
-            # Armazena o conversor atual na instância da GUI
             self.current_buck = buck
 
             res_text = (
@@ -563,14 +571,14 @@ class BuckSimulatorGUI:
             self.ax1.plot(time_vec * 1e3, iL, linewidth=1.2, color="tab:blue")
             self.ax1.set_title("Corrente no Indutor (Teórico)")
             self.ax1.set_xlabel("Tempo (ms)")
-            self.ax1.set_ylabel(r"$i_L$ (A)")
+            self.ax1.set_ylabel(r"\(i_L\) (A)")
             self.ax1.grid(True, linestyle="--", alpha=0.5)
 
             self.ax2.clear()
             self.ax2.plot(time_vec * 1e3, vC, linewidth=1.2, color="tab:orange")
             self.ax2.set_title("Tensão de Saída (Teórico)")
             self.ax2.set_xlabel("Tempo (ms)")
-            self.ax2.set_ylabel(r"$v_C$ (V)")
+            self.ax2.set_ylabel(r"\(v_C\) (V)")
             self.ax2.grid(True, linestyle="--", alpha=0.5)
 
             self.fig.tight_layout()
