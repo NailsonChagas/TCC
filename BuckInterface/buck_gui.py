@@ -346,7 +346,8 @@ class BuckSimulatorGUI:
             Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, fs_sim, total_steps = buck.discretize_model(N, sim_time)
             self.expected_steps = total_steps
 
-            payload = f"CONFIG;{buck.Vs};{Ad_00};{Ad_01};{Bd1_0};{Ad_10};{Ad_11};{Bd1_1};{fs_sim};{total_steps}\n"
+            # vC_max, iL_max, Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, fs_sim, total_steps
+            payload = f"CONFIG;{buck.Vs};{buck.Vs/buck.R};{Ad_00};{Ad_01};{Bd1_0};{Ad_10};{Ad_11};{Bd1_1};{fs_sim};{total_steps}\n"
 
             with serial.Serial(port, 115200, timeout=0.1) as ser:
                 ser.reset_input_buffer()
@@ -478,14 +479,16 @@ class BuckSimulatorGUI:
                 
                 # Acessa o Vs diretamente através do objeto buck armazenado na GUI
                 Vs = self.current_buck.Vs if self.current_buck else float(self._get_active_inputs()["Vs [V]"].get())
+                R = self.current_buck.R if self.current_buck else float(self._get_active_inputs()["R [Ω]"].get())
                 dac_max = 3.3
                 
                 # Fator de conversão inverso (de DAC para Físico)
-                scale_factor = Vs / dac_max
+                conversion_factor_vC = Vs / dac_max
+                conversion_factor_iL = (Vs/R) / dac_max
                 
                 self.rx_time.append(t_val * 1e3) 
-                self.rx_iL.append(iL_val * scale_factor)
-                self.rx_vC.append(vC_val * scale_factor)
+                self.rx_iL.append(iL_val * conversion_factor_iL)
+                self.rx_vC.append(vC_val * conversion_factor_vC)
                 has_new_data = True
             except queue.Empty:
                 break

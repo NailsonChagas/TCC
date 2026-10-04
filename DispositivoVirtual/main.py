@@ -23,10 +23,12 @@ class VirtualUSBDevice:
         self.dac_levels = DAC_LEVELS
 
         # O Vs que vem do payload será o teto físico do sistema (ex: 50.0V)
-        self.physical_max_v = 50.0
+        self.vC_max = 0.0
+        self.iL_max = 0.0
 
         # Fator de conversão inicial (3.3 / 50.0)
-        self.conversion_factor = self.dac_max_v / self.physical_max_v
+        self.conversion_factor_vC = 0.0
+        self.conversion_factor_iL = 0.0
 
         # Inicialização dos coeficientes do espaço de estados
         self.ad00 = 0.0
@@ -76,12 +78,13 @@ class VirtualUSBDevice:
     def _handle_config(self, payload: str):
         parts = payload.split(";")
 
-        if len(parts) == 10:
-            _, vs_str, ad00, ad01, bd10, ad10, ad11, bd11, fs_str, steps_str = parts
+        if len(parts) == 11:
+            _, vc_str, il_str, ad00, ad01, bd10, ad10, ad11, bd11, fs_str, steps_str = parts
 
             try:
                 # O Vs recebido da GUI define a tensão física de entrada do Buck (ex: 50V)
-                self.physical_max_v = float(vs_str)
+                self.vC_max = float(vc_str)
+                self.iL_max = float(il_str)
 
                 # Salva os coeficientes do espaço de estados
                 self.ad00 = float(ad00)
@@ -92,7 +95,8 @@ class VirtualUSBDevice:
                 self.bd11 = float(bd11)
                 
                 # Recalcula o fator de conversão mantendo o DAC fixo em 3.3V
-                self.conversion_factor = self.dac_max_v / self.physical_max_v
+                self.conversion_factor_vC = self.dac_max_v / self.vC_max
+                self.conversion_factor_iL = self.dac_max_v / self.iL_max
 
                 # fs_str recebe fs_sim (Frequência sobreamostrada da simulação)
                 fs_sim = float(fs_str)
@@ -102,8 +106,9 @@ class VirtualUSBDevice:
                 return
 
             print("--- Parâmetros de Discretização Atualizados ---")
-            print(f"  Vs Físico (Planta): {self.physical_max_v} V | Teto DAC: {self.dac_max_v} V")
-            print(f"  Fator de Conversão: {self.conversion_factor:.6f}")
+            print(f"  Vc Max (Planta): {self.vC_max} V |  iL Max (Planta): {self.iL_max} V | Teto DAC: {self.dac_max_v} V")
+            print(f"  Fator de Conversão vC: {self.conversion_factor_vC:.6f}")
+            print(f"  Fator de Conversão iL: {self.conversion_factor_iL:.6f}")
             print(f"  Ad_00: {self.ad00} | Ad_01: {self.ad01} | Bd1_0: {self.bd10}")
             print(f"  Ad_10: {self.ad10} | Ad_11: {self.ad11} | Bd1_1: {self.bd11}")
             print(f"  fs_sim: {fs_sim:.2f} Hz | Total Steps: {total_steps}")
@@ -142,8 +147,8 @@ class VirtualUSBDevice:
             elapsed = k * dt
 
             # 1. Conversão para o domínio do DAC (0 a 3.3V)
-            val_vC_dac_ideal = vC_val * self.conversion_factor
-            val_iL_dac_ideal = iL_val * self.conversion_factor
+            val_vC_dac_ideal = vC_val * self.conversion_factor_vC
+            val_iL_dac_ideal = iL_val * self.conversion_factor_iL
 
             # 2. Quantização dos sinais conforme a resolução do DAC
             val_vC_dac = self.quantize_dac(val_vC_dac_ideal)
@@ -164,8 +169,8 @@ class VirtualUSBDevice:
             # O resto da divisão funciona perfeitamente agora, pois dt é muito menor que T_s
             if (elapsed % T_s) < (DUTY_CYCLE * T_s):  
                 # Chave Fechada
-                next_iL = self.ad00 * iL_val + self.ad01 * vC_val + self.bd10 * self.physical_max_v
-                next_vC = self.ad10 * iL_val + self.ad11 * vC_val + self.bd11 * self.physical_max_v
+                next_iL = self.ad00 * iL_val + self.ad01 * vC_val + self.bd10
+                next_vC = self.ad10 * iL_val + self.ad11 * vC_val + self.bd11
             else:  
                 # Chave Aberta
                 next_iL = self.ad00 * iL_val + self.ad01 * vC_val

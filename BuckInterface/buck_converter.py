@@ -122,10 +122,10 @@ class BuckConverterCCM:
         return (
             float(Ad[0, 0]),
             float(Ad[0, 1]),
-            float(Bd1[0]),
+            float(Bd1[0]) * self.Vs,
             float(Ad[1, 0]),
             float(Ad[1, 1]),
-            float(Bd1[1]),
+            float(Bd1[1]) * self.Vs,
             fs_sim,
             total_steps,
         )
@@ -180,8 +180,8 @@ class BuckConverterCCM:
         # Simulação temporal
         for k in range(total_steps - 1):
             if (time[k] % T_s) < (self.D * T_s):  # Chave fechada
-                iL[k + 1] = Ad_00 * iL[k] + Ad_01 * vC[k] + Bd1_0 * self.Vs
-                vC[k + 1] = Ad_10 * iL[k] + Ad_11 * vC[k] + Bd1_1 * self.Vs
+                iL[k + 1] = Ad_00 * iL[k] + Ad_01 * vC[k] + Bd1_0
+                vC[k + 1] = Ad_10 * iL[k] + Ad_11 * vC[k] + Bd1_1
             else:  # Chave aberta
                 iL[k + 1] = Ad_00 * iL[k] + Ad_01 * vC[k]
                 vC[k + 1] = Ad_10 * iL[k] + Ad_11 * vC[k]
