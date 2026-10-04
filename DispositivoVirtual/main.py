@@ -33,18 +33,11 @@ class VirtualUSBDevice:
         Quantiza um valor de tensão imitando a resolução discreta do DAC em hardware.
         """
         # Saturação na faixa do DAC (0V a 3.3V)
-        if voltage < 0.0:
-            voltage = 0.0
-        elif voltage > self.dac_max_v:
-            voltage = self.dac_max_v
+        if voltage < 0.0: voltage = 0.0
+        elif voltage > self.dac_max_v: voltage = self.dac_max_v
 
-        # Converte tensão para código digital
         code = voltage * float(self.dac_levels) / self.dac_max_v
-
-        # Arredonda para o código inteiro mais próximo (equivalente a (unsigned int)(code + 0.5f))
         code_quantized = int(code + 0.5)
-
-        # Converte novamente o código para tensão quantizada
         return (float(code_quantized) * self.dac_max_v) / float(self.dac_levels)
 
     def start(self):
