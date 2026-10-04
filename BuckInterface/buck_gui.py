@@ -505,13 +505,13 @@ class BuckSimulatorGUI:
         if has_new_data:
             self.rt_ax1.clear()
             self.rt_ax1.plot(self.rx_time, self.rx_iL, linewidth=1.2, color="tab:blue")
-            self.rt_ax1.set_ylabel(r"\(i_L\) (A)")
+            self.rt_ax1.set_ylabel(r"$i_L$ (A)")
             self.rt_ax1.grid(True, linestyle="--", alpha=0.5)
 
             self.rt_ax2.clear()
             self.rt_ax2.plot(self.rx_time, self.rx_vC, linewidth=1.2, color="tab:orange")
             self.rt_ax2.set_xlabel("Tempo (ms)")
-            self.rt_ax2.set_ylabel(r"\(v_C\) (V)")
+            self.rt_ax2.set_ylabel(r"$v_C$ (V)")
             self.rt_ax2.grid(True, linestyle="--", alpha=0.5)
 
             self.rt_canvas.draw_idle()
@@ -571,14 +571,14 @@ class BuckSimulatorGUI:
             self.ax1.plot(time_vec * 1e3, iL, linewidth=1.2, color="tab:blue")
             self.ax1.set_title("Corrente no Indutor (Teórico)")
             self.ax1.set_xlabel("Tempo (ms)")
-            self.ax1.set_ylabel(r"\(i_L\) (A)")
+            self.ax1.set_ylabel(r"$i_L$ (A)")
             self.ax1.grid(True, linestyle="--", alpha=0.5)
 
             self.ax2.clear()
             self.ax2.plot(time_vec * 1e3, vC, linewidth=1.2, color="tab:orange")
             self.ax2.set_title("Tensão de Saída (Teórico)")
             self.ax2.set_xlabel("Tempo (ms)")
-            self.ax2.set_ylabel(r"\(v_C\) (V)")
+            self.ax2.set_ylabel(r"$v_C$ (V)")
             self.ax2.grid(True, linestyle="--", alpha=0.5)
 
             self.fig.tight_layout()
