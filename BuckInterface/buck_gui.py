@@ -487,16 +487,9 @@ class BuckSimulatorGUI:
             try:
                 t_val, iL_val, vC_val = self.data_queue.get_nowait()
                 
-                Vs = self.current_buck.Vs if self.current_buck else float(self._get_active_inputs()["Vs [V]"].get())
-                R = self.current_buck.R if self.current_buck else float(self._get_active_inputs()["R [Ω]"].get())
-                dac_max = 3.3
-                
-                conversion_factor_vC = Vs / dac_max
-                conversion_factor_iL = (Vs/R) / dac_max
-                
                 self.rx_time.append(t_val * 1e3) 
-                self.rx_iL.append(iL_val * conversion_factor_iL)
-                self.rx_vC.append(vC_val * conversion_factor_vC)
+                self.rx_iL.append(iL_val)
+                self.rx_vC.append(vC_val)
                 has_new_data = True
             except queue.Empty:
                 break

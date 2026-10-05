@@ -146,16 +146,13 @@ class VirtualUSBDevice:
         for k in range(total_steps):
             elapsed = k * dt
 
-            # 1. Conversão para o domínio do DAC (0 a 3.3V)
-            val_vC_dac_ideal = vC_val * self.conversion_factor_vC
-            val_iL_dac_ideal = iL_val * self.conversion_factor_iL
+            # 1. Conversão para o domínio do DAC (0 a 3.3V) e Quantização dos sinais conforme a resolução do DAC
+            # seria a saida do dac mas estou só avaliando a telemetria
+            val_vC_dac = self.quantize_dac(vC_val * self.conversion_factor_vC)
+            val_iL_dac = self.quantize_dac(iL_val * self.conversion_factor_iL)
 
-            # 2. Quantização dos sinais conforme a resolução do DAC
-            val_vC_dac = self.quantize_dac(val_vC_dac_ideal)
-            val_iL_dac = self.quantize_dac(val_iL_dac_ideal)
-
-            # 3. Empacotamento e transmissão
-            telemetry_packet = f"DATA;{k};{elapsed:.6e};{val_iL_dac};{val_vC_dac}\n"
+            # 2. Empacotamento e transmissão
+            telemetry_packet = f"DATA;{k};{elapsed:.6e};{iL_val};{vC_val}\n"
 
             written = False
             while not written:
