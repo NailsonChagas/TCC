@@ -52,6 +52,13 @@ TIM_HandleTypeDef htim1;
   static float pastE = 0.0f;
   static float Vref = VREF_INICIAL;
   static uint32_t t_ticks = 0;
+
+  // Variáveis para medição de performance
+  volatile uint32_t ciclos_inicio = 0;
+  volatile uint32_t ciclos_fim = 0;
+  volatile uint32_t ciclos_atual = 0;
+  volatile uint32_t ciclos_maximo = 0;
+  
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,6 +76,8 @@ static void MX_TIM1_Init(void);
 // converter o sinal trigado pelo Timer 1. Custo de espera = 0 ciclos.
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
   if (hadc->Instance == ADC1) {
+    ciclos_inicio = DWT->CYCCNT; // <--- CAPTURA O CLOCK INICIAL
+
     /* 1. LEITURA IMEDIATA DO ADC */
     // Pega o valor já convertido do registrador de injeção (Rank 1)
     uint32_t adc_raw = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1);
@@ -100,6 +109,10 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
     /* 6. SAÍDA PARA O PWM EM HARDWARE */
     TIM1->CCR1 = (uint32_t)(U * 1440.0f);
+
+    ciclos_fim = DWT->CYCCNT; // <--- CAPTURA O CLOCK FINAL
+    ciclos_atual = ciclos_fim - ciclos_inicio;
+    if (ciclos_atual > ciclos_maximo)  ciclos_maximo = ciclos_atual;
   }
 }
 /* USER CODE END 0 */
@@ -145,6 +158,12 @@ int main(void)
   // Inicia o ADC em modo injetado com interrupção. 
   // A partir desta linha, o hardware faz o sincronismo sozinho.
   HAL_ADCEx_InjectedStart_IT(&hadc1);
+
+  // --- Inicialização do DWT Cycle Counter ---
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Habilita o Trace
+  DWT->CYCCNT = 0;                                // Zera o contador
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;            // Habilita o contador
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
