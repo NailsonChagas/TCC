@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "sm_simulation.h"
+#include "usb_comm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -93,7 +94,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-
+  USB_Comm_Init();
+  SM_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -103,6 +105,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    USB_Comm_ProcessTx();
+    SM_Process();
   }
   /* USER CODE END 3 */
 }
