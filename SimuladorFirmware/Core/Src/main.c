@@ -105,8 +105,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    USB_Comm_ProcessTx();
     SM_Process();
+    USB_Comm_ProcessTx();
   }
   /* USER CODE END 3 */
 }
