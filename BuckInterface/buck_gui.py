@@ -5,6 +5,7 @@ import threading
 import glob
 import queue
 import csv
+import struct
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import matplotlib.pyplot as plt
@@ -14,34 +15,37 @@ import serial.tools.list_ports
 
 from buck_converter import BuckConverterCCM, CCMError
 
-IS_TEST_MODE = True
+IS_TEST_MODE = False
+DEBUG_MODE = True  # <--- Controle central para ligar/desligar os prints de depuração
+
+# Definições de Cabeçalhos do Protocolo Binário
+HEADER_CONFIG         = 0x0001
+HEADER_CONFIG_SUCCESS = 0x0002
+HEADER_CONFIG_FAIL    = 0x0003
+HEADER_DATA           = 0x0004
+HEADER_SIMULATION_END = 0x0005
 
 
 class BuckSimulatorGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Simulador Conversor Buck CCM")
+        self.root.title("Simulador Conversor Buck CCM - STM32H7")
         self.root.geometry("950x710")
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        # Referência para armazenar o objeto do conversor ativo
         self.current_buck = None
-
-        # Controle de temporizador para limpar a label de status
         self._status_timer = None
 
-        # =====================================================================
         # Filas e Buffers para recepção em tempo real
-        # =====================================================================
         self.data_queue = queue.Queue()
         self.rx_time = []
         self.rx_iL = []
         self.rx_vC = []
         self.expected_steps = 0
-        self.rt_window = None  # Referência para a nova janela
+        self.rt_window = None
 
-        # Configuração do Layout Principal com Largura Fixa na Sidebar
+        # Configuração do Layout Principal
         self.left_frame = ttk.Frame(root, padding="10", width=290)
         self.left_frame.pack(side=tk.LEFT, fill=tk.Y, expand=False)
         self.left_frame.pack_propagate(False)
@@ -49,10 +53,8 @@ class BuckSimulatorGUI:
         self.right_frame = ttk.Frame(root, padding="10")
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        # Variável para alternar o modo de instanciação
         self.mode_var = tk.StringVar(value="Parâmetros de Projeto")
 
-        # Dicionários de Inputs para cada modo
         self.inputs_project = {
             "Vs [V]": tk.StringVar(value="50.0"),
             "Vo [V]": tk.StringVar(value="25.0"),
@@ -80,16 +82,11 @@ class BuckSimulatorGUI:
 
         self._build_sidebar()
         self._build_plot_panel()
-
-        # Vincula rastreio de alterações para atualizar simulação automaticamente
         self._trace_inputs()
 
         self.run_simulation()
 
     def set_temporary_status(self, text: str, color: str = "black", timeout_ms: int = 5000):
-        """
-        Define a mensagem de status e programa seu cancelamento/limpeza após `timeout_ms`.
-        """
         if self._status_timer is not None:
             self.root.after_cancel(self._status_timer)
             self._status_timer = None
@@ -127,8 +124,17 @@ class BuckSimulatorGUI:
             return ["Nenhuma porta virtual ativa (Ligue o socat)"]
 
         ports = serial.tools.list_ports.comports()
-        devices = [p.device for p in ports]
-        return devices if devices else ["Nenhum dispositivo encontrado"]
+        devices = []
+        
+        for p in ports:
+            is_st = (p.vid == 0x0483) or \
+                    (p.manufacturer and "STMicroelectronics" in p.manufacturer) or \
+                    (p.description and "STM32" in p.description)
+            
+            if is_st:
+                devices.append(p.device)
+                
+        return devices if devices else ["Nenhum STM encontrado"]
 
     def refresh_devices(self):
         devices = self._get_available_devices()
@@ -330,7 +336,7 @@ class BuckSimulatorGUI:
         self.cancel_flag = False
 
         port = self.target_device_var.get()
-        if not port or "Nenh" in port:
+        if not port or "Nenhum" in port:
             self.set_temporary_status("Erro: Nenhum dispositivo selecionado!", "red", 4000)
             return
 
@@ -362,45 +368,109 @@ class BuckSimulatorGUI:
             Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, fs_sim, total_steps = buck.discretize_model(N, sim_time)
             self.expected_steps = total_steps
 
-            payload = f"CONFIG;{buck.Vs};{buck.Vs/buck.R};{Ad_00};{Ad_01};{Bd1_0};{Ad_10};{Ad_11};{Bd1_1};{fs_sim};{total_steps}\n"
+            vO_max = buck.Vo * 1.5
+            iL_max = (buck.Vs / buck.R) * 2.0
+            
+            payload = struct.pack(
+                "<H9f2I",
+                HEADER_CONFIG,
+                float(vO_max),
+                float(iL_max),
+                float(Ad_00),
+                float(Ad_01),
+                float(Bd1_0),
+                float(Ad_10),
+                float(Ad_11),
+                float(Bd1_1),
+                float(fs_sim),
+                int(N),
+                int(total_steps)
+            )
+
+            if DEBUG_MODE:
+                print(f"\n[DEBUG] Conectando à porta {port} a 115200 baud...")
+                print(f"[DEBUG] Enviando pacote CONFIG ({len(payload)} bytes): {payload.hex()}")
 
             with serial.Serial(port, 115200, timeout=0.1) as ser:
                 ser.reset_input_buffer()
-                ser.write(payload.encode('ascii'))
+                ser.write(payload)
                 ser.flush()
 
-                while not self.cancel_flag:
-                    if ser.in_waiting > 0:
-                        line = ser.readline().decode('utf-8', errors='ignore').strip()
-                        if "OK" in line:
+                response_ack = False
+                timeout_start = time.time()
+                while not self.cancel_flag and (time.time() - timeout_start) < 3.0:
+                    if ser.in_waiting >= 2:
+                        header_bytes = ser.read(2)
+                        resp_header = struct.unpack("<H", header_bytes)[0]
+                        if DEBUG_MODE:
+                            print(f"[DEBUG] Recebido Header de Resposta: 0x{resp_header:04X}")
+                        
+                        if resp_header == HEADER_CONFIG_SUCCESS:
+                            if DEBUG_MODE:
+                                print("[DEBUG] -> CONFIG_SUCCESS (0x0002) confirmado pelo MCU!")
+                            response_ack = True
                             break
-                    time.sleep(0.05)
+                        elif resp_header == HEADER_CONFIG_FAIL:
+                            if DEBUG_MODE:
+                                print("[DEBUG] -> CONFIG_FAIL (0x0003) recebido do MCU!")
+                            self.root.after(0, lambda: self.set_temporary_status("Erro: Configuração rejeitada pelo MCU (CONFIG_FAIL).", "red", 5000))
+                            return
+                    time.sleep(0.01)
+
+                if not response_ack:
+                    if DEBUG_MODE:
+                        print("[DEBUG] Timeout: Nenhuma resposta válida ao CONFIG.")
+                    self.root.after(0, lambda: self.set_temporary_status("Timeout: MCU não respondeu ao CONFIG.", "red", 4000))
+                    return
 
                 if self.cancel_flag:
+                    if DEBUG_MODE:
+                        print("[DEBUG] Envio cancelado pelo utilizador.")
                     self.root.after(0, lambda: self.set_temporary_status("Envio cancelado pelo utilizador.", "orange", 4000))
                     return
 
                 self.root.after(0, self._open_realtime_window)
 
-                rx_buffer = ""
                 received_count = 0
+                packet_size = 14
+                rx_buffer = bytearray()
+                if DEBUG_MODE:
+                    print("[DEBUG] Entrando no loop de recepção de dados (DATA)...")
 
                 while not self.cancel_flag and received_count < total_steps:
                     bytes_available = ser.in_waiting
                     if bytes_available > 0:
-                        raw_bytes = ser.read(bytes_available)
-                        rx_buffer += raw_bytes.decode('utf-8', errors='ignore')
+                        chunk = ser.read(bytes_available)
+                        rx_buffer.extend(chunk)
 
-                        while "\n" in rx_buffer:
-                            line, rx_buffer = rx_buffer.split("\n", 1)
-                            line = line.strip()
+                        while len(rx_buffer) >= 2:
+                            msg_header = struct.unpack("<H", rx_buffer[:2])[0]
 
-                            if line.startswith("DATA;"):
-                                parts = line.split(";")
-                                if len(parts) == 5:
-                                    _, k, elapsed, val_iL, val_vC = parts
-                                    self.data_queue.put((float(elapsed), float(val_iL), float(val_vC)))
+                            if msg_header == HEADER_DATA:
+                                if len(rx_buffer) >= packet_size:
+                                    packet = rx_buffer[:packet_size]
+                                    del rx_buffer[:packet_size]
+                                    
+                                    _, k_val, iL_val, vC_val = struct.unpack("<Hiff" if struct.calcsize("<Hiff")==14 else "<HIff", packet)
+                                    
+                                    if DEBUG_MODE:
+                                        print(f"[DEBUG DATA] Passo k={k_val}, iL={iL_val:.4f} A, vC={vC_val:.4f} V")
+                                    
+                                    t_elapsed = k_val / fs_sim
+                                    self.data_queue.put((t_elapsed, iL_val, vC_val))
                                     received_count += 1
+                                else:
+                                    break
+                            elif msg_header == HEADER_SIMULATION_END:
+                                del rx_buffer[:2]
+                                if DEBUG_MODE:
+                                    print("[DEBUG] -> SIMULATION_END (0x0005) recebido do MCU!")
+                                received_count = total_steps
+                                break
+                            else:
+                                unknown_byte = rx_buffer.pop(0)
+                                if DEBUG_MODE:
+                                    print(f"[DEBUG LIXO] Byte ignorado: 0x{unknown_byte:02X}")
                     else:
                         time.sleep(0.001)
 
@@ -408,10 +478,15 @@ class BuckSimulatorGUI:
                     time.sleep(0.01)
 
                 if received_count >= total_steps:
+                    if DEBUG_MODE:
+                        print("[DEBUG] Simulação e transmissão concluídas com sucesso.")
                     self.root.after(0, lambda: self.set_temporary_status("Sucesso: Transmissão Serial Concluída!", "green", 5000))
 
         except Exception as err:
-            self.root.after(0, lambda: self.set_temporary_status(f"Erro Serial: {err}", "red", 6000))
+            err_msg = str(err)
+            if DEBUG_MODE:
+                print(f"[EXCEÇÃO SERIAL] {err_msg}")
+            self.root.after(0, lambda e=err_msg: self.set_temporary_status(f"Erro Serial: {e}", "red", 6000))
         
         finally:
             self.root.after(0, self._close_loading_dialog)
