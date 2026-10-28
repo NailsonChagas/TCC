@@ -16,9 +16,10 @@ import serial.tools.list_ports
 from buck_converter import BuckConverterCCM, CCMError
 
 IS_TEST_MODE = False
-DEBUG_MODE = True  # <--- Controle central para ligar/desligar os prints de depuração
+DEBUG_MODE = True  # Exibe mensagens essenciais de status no terminal
+MAX_MS_LOCAL_SIM = 1000
 
-# Definições de Cabeçalhos do Protocolo Binário
+# Definições do Protocolo Serial
 HEADER_CONFIG         = 0x0001
 HEADER_CONFIG_SUCCESS = 0x0002
 HEADER_CONFIG_FAIL    = 0x0003
@@ -37,15 +38,20 @@ class BuckSimulatorGUI:
         self.current_buck = None
         self._status_timer = None
 
-        # Filas e Buffers para recepção em tempo real
+        # Filas e Buffers de Recepção
         self.data_queue = queue.Queue()
         self.rx_time = []
         self.rx_iL = []
         self.rx_vC = []
         self.expected_steps = 0
+        self.received_count = 0
         self.rt_window = None
 
-        # Configuração do Layout Principal
+        # Objetos de linha do Matplotlib (para atualização rápida)
+        self.line_iL = None
+        self.line_vC = None
+
+        # Layout Principal
         self.left_frame = ttk.Frame(root, padding="10", width=290)
         self.left_frame.pack(side=tk.LEFT, fill=tk.Y, expand=False)
         self.left_frame.pack_propagate(False)
@@ -129,12 +135,13 @@ class BuckSimulatorGUI:
         for p in ports:
             is_st = (p.vid == 0x0483) or \
                     (p.manufacturer and "STMicroelectronics" in p.manufacturer) or \
-                    (p.description and "STM32" in p.description)
+                    (p.description and "STM32" in p.description) or \
+                    ("ttyACM" in p.device) or ("ttyUSB" in p.device)
             
             if is_st:
                 devices.append(p.device)
                 
-        return devices if devices else ["Nenhum STM encontrado"]
+        return devices if devices else ["Nenhum dispositivo encontrado"]
 
     def refresh_devices(self):
         devices = self._get_available_devices()
@@ -306,7 +313,7 @@ class BuckSimulatorGUI:
 
         ttk.Label(
             self.modal_dialog, 
-            text="⏳ Aguardando Configuração (ACK)...", 
+            text="⏳ Transmitindo e aguardando resposta...", 
             font=("Arial", 10, "bold"),
             justify=tk.CENTER
         ).pack(pady=15)
@@ -352,11 +359,13 @@ class BuckSimulatorGUI:
         self.rx_time.clear()
         self.rx_iL.clear()
         self.rx_vC.clear()
+        self.received_count = 0
         with self.data_queue.mutex:
             self.data_queue.queue.clear()
 
         self._show_loading_dialog()
 
+        # Envia o tempo digitado (em segundos) diretamente para a thread serial
         threading.Thread(
             target=self._send_and_receive_serial,
             args=(buck, N, sim_time_ms / 1000.0, port),
@@ -365,12 +374,15 @@ class BuckSimulatorGUI:
 
     def _send_and_receive_serial(self, buck: BuckConverterCCM, N: int, sim_time: float, port: str):
         try:
+            # Calcula total_steps com base no tempo total digitado
             Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1, fs_sim, total_steps = buck.discretize_model(N, sim_time)
             self.expected_steps = total_steps
+            self.received_count = 0
 
-            vO_max = buck.Vo * 1.5
+            vO_max = buck.Vs
             iL_max = (buck.Vs / buck.R) * 2.0
             
+            # CORREÇÃO: Envia buck.fs (frequência nominal 5000 Hz) porque o MCU multiplica por N internamente
             payload = struct.pack(
                 "<H9f2I",
                 HEADER_CONFIG,
@@ -382,104 +394,65 @@ class BuckSimulatorGUI:
                 float(Ad_10),
                 float(Ad_11),
                 float(Bd1_1),
-                float(fs_sim),
+                float(buck.fs),  # <--- Frequência nominal fs (ex: 5000 Hz)
                 int(N),
-                int(total_steps)
+                int(total_steps) # total_steps correspondente ao tempo digitado
             )
 
             if DEBUG_MODE:
-                print(f"\n[DEBUG] Conectando à porta {port} a 115200 baud...")
-                print(f"[DEBUG] Enviando pacote CONFIG ({len(payload)} bytes): {payload.hex()}")
+                print(f"\n[DEBUG] Conectando à porta {port}...")
+                print(f"[DEBUG] Enviando CONFIG ({len(payload)} bytes): fs={buck.fs} Hz, N={N}, sim_time={sim_time*1e3:.1f}ms, total_steps={total_steps}")
 
-            with serial.Serial(port, 115200, timeout=0.1) as ser:
+            with serial.Serial(port, 115200, timeout=1.0) as ser:
                 ser.reset_input_buffer()
                 ser.write(payload)
                 ser.flush()
 
-                response_ack = False
-                timeout_start = time.time()
-                while not self.cancel_flag and (time.time() - timeout_start) < 3.0:
-                    if ser.in_waiting >= 2:
-                        header_bytes = ser.read(2)
-                        resp_header = struct.unpack("<H", header_bytes)[0]
+                simulacao_rodando = True
+
+                while simulacao_rodando and self.received_count < total_steps and not self.cancel_flag:
+                    header_bytes = ser.read(2)
+                    if len(header_bytes) < 2:
+                        continue
+
+                    header = struct.unpack("<H", header_bytes)[0]
+
+                    if header == HEADER_CONFIG_SUCCESS:
                         if DEBUG_MODE:
-                            print(f"[DEBUG] Recebido Header de Resposta: 0x{resp_header:04X}")
-                        
-                        if resp_header == HEADER_CONFIG_SUCCESS:
+                            print("[MCU] -> CONFIG_SUCCESS: Simulação aceita pelo firmware!")
+                        self.root.after(0, self._open_realtime_window)
+
+                    elif header == HEADER_CONFIG_FAIL:
+                        if DEBUG_MODE:
+                            print("[MCU] -> CONFIG_FAIL: Configuração rejeitada!")
+                        self.root.after(0, lambda: self.set_temporary_status("Erro: Configuração rejeitada pelo MCU.", "red", 5000))
+                        break
+
+                    elif header == HEADER_DATA:
+                        payload_bytes = ser.read(12)
+                        if len(payload_bytes) == 12:
+                            k_val, iL_val, vC_val = struct.unpack("<I2f", payload_bytes)
+                            t_elapsed = k_val / (buck.fs * N)  # fs_sim = buck.fs * N (frequência real de amostragem no MCU)
+                            self.data_queue.put((t_elapsed, iL_val, vC_val))
+                            self.received_count += 1
+                        else:
                             if DEBUG_MODE:
-                                print("[DEBUG] -> CONFIG_SUCCESS (0x0002) confirmado pelo MCU!")
-                            response_ack = True
+                                print("[MCU] -> Pacote DATA incompleto!")
                             break
-                        elif resp_header == HEADER_CONFIG_FAIL:
-                            if DEBUG_MODE:
-                                print("[DEBUG] -> CONFIG_FAIL (0x0003) recebido do MCU!")
-                            self.root.after(0, lambda: self.set_temporary_status("Erro: Configuração rejeitada pelo MCU (CONFIG_FAIL).", "red", 5000))
-                            return
-                    time.sleep(0.01)
 
-                if not response_ack:
-                    if DEBUG_MODE:
-                        print("[DEBUG] Timeout: Nenhuma resposta válida ao CONFIG.")
-                    self.root.after(0, lambda: self.set_temporary_status("Timeout: MCU não respondeu ao CONFIG.", "red", 4000))
-                    return
+                    elif header == HEADER_SIMULATION_END:
+                        if DEBUG_MODE:
+                            print("[MCU] -> SIMULATION_END: Fim da execução!")
+                        simulacao_rodando = False
+                        break
 
-                if self.cancel_flag:
-                    if DEBUG_MODE:
-                        print("[DEBUG] Envio cancelado pelo utilizador.")
-                    self.root.after(0, lambda: self.set_temporary_status("Envio cancelado pelo utilizador.", "orange", 4000))
-                    return
-
-                self.root.after(0, self._open_realtime_window)
-
-                received_count = 0
-                packet_size = 14
-                rx_buffer = bytearray()
-                if DEBUG_MODE:
-                    print("[DEBUG] Entrando no loop de recepção de dados (DATA)...")
-
-                while not self.cancel_flag and received_count < total_steps:
-                    bytes_available = ser.in_waiting
-                    if bytes_available > 0:
-                        chunk = ser.read(bytes_available)
-                        rx_buffer.extend(chunk)
-
-                        while len(rx_buffer) >= 2:
-                            msg_header = struct.unpack("<H", rx_buffer[:2])[0]
-
-                            if msg_header == HEADER_DATA:
-                                if len(rx_buffer) >= packet_size:
-                                    packet = rx_buffer[:packet_size]
-                                    del rx_buffer[:packet_size]
-                                    
-                                    _, k_val, iL_val, vC_val = struct.unpack("<Hiff" if struct.calcsize("<Hiff")==14 else "<HIff", packet)
-                                    
-                                    if DEBUG_MODE:
-                                        print(f"[DEBUG DATA] Passo k={k_val}, iL={iL_val:.4f} A, vC={vC_val:.4f} V")
-                                    
-                                    t_elapsed = k_val / fs_sim
-                                    self.data_queue.put((t_elapsed, iL_val, vC_val))
-                                    received_count += 1
-                                else:
-                                    break
-                            elif msg_header == HEADER_SIMULATION_END:
-                                del rx_buffer[:2]
-                                if DEBUG_MODE:
-                                    print("[DEBUG] -> SIMULATION_END (0x0005) recebido do MCU!")
-                                received_count = total_steps
-                                break
-                            else:
-                                unknown_byte = rx_buffer.pop(0)
-                                if DEBUG_MODE:
-                                    print(f"[DEBUG LIXO] Byte ignorado: 0x{unknown_byte:02X}")
                     else:
-                        time.sleep(0.001)
+                        if DEBUG_MODE:
+                            print(f"[MCU] -> Header Desconhecido: 0x{header:04X}")
 
-                while not self.data_queue.empty() and not self.cancel_flag:
-                    time.sleep(0.01)
-
-                if received_count >= total_steps:
+                if self.received_count >= total_steps or not simulacao_rodando:
                     if DEBUG_MODE:
-                        print("[DEBUG] Simulação e transmissão concluídas com sucesso.")
+                        print(f"[DEBUG] Transmissão concluída com sucesso ({self.received_count} amostras).")
                     self.root.after(0, lambda: self.set_temporary_status("Sucesso: Transmissão Serial Concluída!", "green", 5000))
 
         except Exception as err:
@@ -522,10 +495,19 @@ class BuckSimulatorGUI:
         self.rt_fig, (self.rt_ax1, self.rt_ax2) = plt.subplots(2, 1, figsize=(8, 6))
         self.rt_fig.tight_layout(pad=3.0)
 
+        self.line_iL, = self.rt_ax1.plot([], [], linewidth=1.2, color="tab:blue")
+        self.rt_ax1.set_ylabel(r"$i_L$ (A)")
+        self.rt_ax1.grid(True, linestyle="--", alpha=0.5)
+
+        self.line_vC, = self.rt_ax2.plot([], [], linewidth=1.2, color="tab:orange")
+        self.rt_ax2.set_xlabel("Tempo (ms)")
+        self.rt_ax2.set_ylabel(r"$v_C$ (V)")
+        self.rt_ax2.grid(True, linestyle="--", alpha=0.5)
+
         self.rt_canvas = FigureCanvasTkAgg(self.rt_fig, master=self.rt_window)
         self.rt_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        self.root.after(30, self._update_realtime_plot)
+        self.root.after(50, self._update_realtime_plot)
 
     def _save_realtime_data(self):
         if not self.rx_time:
@@ -561,7 +543,7 @@ class BuckSimulatorGUI:
         while not self.data_queue.empty():
             try:
                 t_val, iL_val, vC_val = self.data_queue.get_nowait()
-                
+                # Recebe e plota todas as amostras
                 self.rx_time.append(t_val * 1e3) 
                 self.rx_iL.append(iL_val)
                 self.rx_vC.append(vC_val)
@@ -570,21 +552,18 @@ class BuckSimulatorGUI:
                 break
 
         if has_new_data:
-            self.rt_ax1.clear()
-            self.rt_ax1.plot(self.rx_time, self.rx_iL, linewidth=1.2, color="tab:blue")
-            self.rt_ax1.set_ylabel(r"$i_L$ (A)")
-            self.rt_ax1.grid(True, linestyle="--", alpha=0.5)
+            self.line_iL.set_data(self.rx_time, self.rx_iL)
+            self.line_vC.set_data(self.rx_time, self.rx_vC)
 
-            self.rt_ax2.clear()
-            self.rt_ax2.plot(self.rx_time, self.rx_vC, linewidth=1.2, color="tab:orange")
-            self.rt_ax2.set_xlabel("Tempo (ms)")
-            self.rt_ax2.set_ylabel(r"$v_C$ (V)")
-            self.rt_ax2.grid(True, linestyle="--", alpha=0.5)
+            self.rt_ax1.relim()
+            self.rt_ax1.autoscale_view()
+            self.rt_ax2.relim()
+            self.rt_ax2.autoscale_view()
 
             self.rt_canvas.draw_idle()
 
-        if len(self.rx_time) < self.expected_steps:
-            self.root.after(30, self._update_realtime_plot)
+        if self.received_count < self.expected_steps and not self.cancel_flag:
+            self.root.after(50, self._update_realtime_plot)
 
     def run_simulation(self, *args) -> BuckConverterCCM | None:
         try:
@@ -613,10 +592,6 @@ class BuckSimulatorGUI:
                 N = int(self.inputs_components["N (f_sim = N * fs)"].get())
                 sim_time_ms = float(self.inputs_components["Tempo [ms]"].get())
 
-                buck = BuckConverterCCM.from_circuit_components(
-                    Vs=Vs, Vo=Vo, R=R, L=L, C=C, fs=fs
-                )
-
             self.current_buck = buck
 
             res_text = (
@@ -632,18 +607,20 @@ class BuckSimulatorGUI:
             self.results_var.set(res_text)
             self.lbl_results.config(foreground="black")
 
-            time_vec, iL, vC = buck.simulate(N=N, sim_time=sim_time_ms / 1000.0)
+            # Limite de MAX_MS_LOCAL_SIM ms APENAS na simulação teórica prévia da tela inicial
+            plot_sim_time_ms = min(sim_time_ms, float(MAX_MS_LOCAL_SIM))
+            time_vec, iL, vC = buck.simulate(N=N, sim_time=plot_sim_time_ms / 1000.0)
 
             self.ax1.clear()
             self.ax1.plot(time_vec * 1e3, iL, linewidth=1.2, color="tab:blue")
-            self.ax1.set_title("Corrente no Indutor (Teórico)")
+            self.ax1.set_title(f"Corrente no Indutor (Teórico - {'máx 500ms' if sim_time_ms > int(MAX_MS_LOCAL_SIM) else f'{sim_time_ms:.1f}ms'})")
             self.ax1.set_xlabel("Tempo (ms)")
             self.ax1.set_ylabel(r"$i_L$ (A)")
             self.ax1.grid(True, linestyle="--", alpha=0.5)
 
             self.ax2.clear()
             self.ax2.plot(time_vec * 1e3, vC, linewidth=1.2, color="tab:orange")
-            self.ax2.set_title("Tensão de Saída (Teórico)")
+            self.ax2.set_title(f"Tensão de Saída (Teórico - {'máx 500ms' if sim_time_ms > int(MAX_MS_LOCAL_SIM) else f'{sim_time_ms:.1f}ms'})")
             self.ax2.set_xlabel("Tempo (ms)")
             self.ax2.set_ylabel(r"$v_C$ (V)")
             self.ax2.grid(True, linestyle="--", alpha=0.5)

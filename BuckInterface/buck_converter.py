@@ -27,15 +27,10 @@ class BuckConverterCCM:
     def from_design_parameters(
         cls, Vs: float, Vo: float, Po: float, delta_iL: float, delta_Vo: float, fs: float = FS,
     ) -> "BuckConverterCCM":
-
         R = Vo**2 / Po
         D = Vo / Vs
-
         L = Vo * (1 - D) / (delta_iL * fs)
-
-        C = Vo * (1 - D) / (
-            8 * L * delta_Vo * fs**2
-        )
+        C = Vo * (1 - D) / (8 * L * delta_Vo * fs**2)
 
         return cls(
             Vs=Vs,
@@ -56,27 +51,6 @@ class BuckConverterCCM:
         C: float,
         fs: float = FS,
     ) -> "BuckConverterCCM":
-        """
-        Cria um conversor Buck em CCM a partir dos componentes do circuito.
-
-        Este método deve ser utilizado quando os valores da resistência de
-        carga, indutância e capacitância já são conhecidos.
-
-        Args:
-            Vs: Tensão de entrada (V).
-            Vo: Tensão de saída (V).
-            R: Resistência da carga (Ω).
-            L: Indutância (H).
-            C: Capacitância (F).
-            fs: Frequência de chaveamento (Hz).
-
-        Returns:
-            Uma instância de ``BuckConverterCCM``.
-
-        Raises:
-            CCMError: Se a indutância informada não satisfizer a condição de
-                operação em modo de condução contínua (CCM).
-        """
         return cls(Vs, Vo, R, L, C, fs)
 
     @property
@@ -92,22 +66,14 @@ class BuckConverterCCM:
     def discretize_model(self, N: int, sim_time: float) -> tuple[float, float, float, float, float, float, float, int]:
         """
         Discretiza o modelo em espaço de estados usando ZOH.
-
-        Retorna
-        -------
-        Ad_00, Ad_01, Bd1_0, Ad_10, Ad_11, Bd1_1 : float
-            Elementos escalares das matrizes discretas Ad e Bd1.
-
-        total_steps : int
-            Número total de pontos de simulação.
         """
-        fs_sim = self.fs * N
+        fs_sim = self.fs
 
         T_s = 1.0 / self.fs
         timestep = T_s / N
         total_steps = int(round(sim_time / timestep))
 
-        # Modelo contínuo
+        # Modelo contínuo em espaço de estados
         A = np.array([
             [0.0, -1.0 / self.L],
             [1.0 / self.C, -1.0 / (self.R * self.C)],
@@ -132,29 +98,8 @@ class BuckConverterCCM:
 
     def simulate(self, N: int, sim_time: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Executa a simulação temporal do conversor Buck.
-
-        Parâmetros
-        ----------
-        N : int
-            Fator de sobreamostragem da simulação:
-            fs_sim = N * fs.
-
-        sim_time : float
-            Tempo total de simulação [s].
-
-        Retorna
-        -------
-        time : np.ndarray
-            Vetor de tempo [s].
-
-        iL : np.ndarray
-            Corrente no indutor [A].
-
-        vC : np.ndarray
-            Tensão no capacitor [V].
+        Executa a simulação temporal teórica do conversor Buck.
         """
-        # Obtenção dos coeficientes discretizados
         (
             Ad_00,
             Ad_01,
@@ -168,16 +113,13 @@ class BuckConverterCCM:
 
         T_s = 1.0 / self.fs
 
-        # Vetores de saída
         time = np.linspace(0, sim_time, total_steps)
         iL = np.zeros(total_steps)
         vC = np.zeros(total_steps)
 
-        # Condição inicial
-        iL[0] = 0 # self.Vo / self.R
-        vC[0] = 0 # self.Vo
+        iL[0] = 0.0
+        vC[0] = 0.0
 
-        # Simulação temporal
         for k in range(total_steps - 1):
             if (time[k] % T_s) < (self.D * T_s):  # Chave fechada
                 iL[k + 1] = Ad_00 * iL[k] + Ad_01 * vC[k] + Bd1_0
