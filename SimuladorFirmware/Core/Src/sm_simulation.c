@@ -10,7 +10,7 @@ extern DAC_HandleTypeDef hdac1;
 
 // --- Buffers de DMA ---
 volatile uint16_t dma_dac_buffer = 0;
-static volatile bool switch_state = false;
+static volatile float switch_state = 0.0f; // é float pq no lugar do if posso só multiplicar Bd1_X por seu valor
 
 // Variaveis da maquina de estados
 static volatile SimState_t current_state = AGUARDA_CONFIG;
@@ -88,7 +88,7 @@ void SM_Process(void) {
                 iL_val = 0.0f;
                 vC_val = 0.0f;
                 dma_dac_buffer = 0;
-                switch_state = false;
+                switch_state = 0.0f;
                 
                 // Envia a confirmação para o computador
                 __send_header_only(HEAD_CONFIG_SUCCESS);
@@ -122,9 +122,19 @@ void SM_Process(void) {
 void SM_Timer_MathStep_ISR(void) {
     if (current_state != EXEC_SIM || k >= cfg.total_steps) return;
 
-    switch_state = (GPIOA->IDR & GPIO_PIN_0) != 0; // vai ver se o PWM do controlador esta em HIGH ou LOW
+    switch_state = 1.0f;// ((GPIOA->IDR & GPIO_PIN_0) != 0) ? 1.0f : 0.0f; // vai ver se o PWM do controlador esta em HIGH ou LOW
 
     // logica da simulação vai vir aqui
+    float new_iL = (cfg.Ad_00 * iL_val) + (cfg.Ad_01 * vC_val) + (cfg.Bd1_0 * switch_state);
+    float new_vC = (cfg.Ad_10 * iL_val) + (cfg.Ad_11 * vC_val) + (cfg.Bd1_1 * switch_state);
+    iL_val = new_iL;
+    vC_val = new_vC;
+
+    float dac_float = (vC_val / cfg.vO_max) * 4095.0f;
+    if (dac_float < 0.0f) dac_float = 0.0f;
+    else if (dac_float > 4095.0f) dac_float = 4095.0f;
+
+    dma_dac_buffer = (uint16_t)dac_float;
 
     k++;
 }
@@ -133,8 +143,8 @@ void SM_Timer_Telemetry_ISR(void) {
     if (current_state != EXEC_SIM) return;
     Protocol_DataPacket_t data;
     data.header = HEAD_DATA;
-    data.k = k;           // Envia o k atualizado pela interrupção matemática
-    data.iL = 0.0f;       // Força 0 
-    data.vC_val = 0.0f;   // Força 0 
+    data.k = k;           
+    data.iL = iL_val;     
+    data.vC_val = vC_val; 
     USB_Comm_QueueTxData((uint8_t*)&data, sizeof(Protocol_DataPacket_t));
 }
