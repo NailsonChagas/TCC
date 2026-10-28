@@ -64,7 +64,6 @@ static void __send_header_only(uint16_t header) {
 
 void SM_Init(void) {
     current_state = AGUARDA_CONFIG;
-    k = 0;
 }
 
 void SM_Process(void) {
@@ -89,6 +88,7 @@ void SM_Process(void) {
                 iL_val = 0.0f;
                 vC_val = 0.0f;
                 dma_dac_buffer = 0;
+                switch_state = false;
                 
                 // Envia a confirmação para o computador
                 __send_header_only(HEAD_CONFIG_SUCCESS);
@@ -120,7 +120,7 @@ void SM_Process(void) {
 }
 
 void SM_Timer_MathStep_ISR(void) {
-    if (current_state != EXEC_SIM) return;
+    if (current_state != EXEC_SIM || k >= cfg.total_steps) return;
 
     switch_state = (GPIOA->IDR & GPIO_PIN_0) != 0; // vai ver se o PWM do controlador esta em HIGH ou LOW
 
