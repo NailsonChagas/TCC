@@ -8,14 +8,14 @@
 static uint8_t tx_buffer[TX_RING_BUFFER_SIZE];
 
 /**
- * @brief Índice de inserção de dados no buffer circular.
+ * @brief Índice de inserção no buffer circular.
  *
  * Indica a próxima posição disponível para escrita.
  */
 static volatile uint16_t tx_head = 0;
 
 /**
- * @brief Índice de leitura de dados do buffer circular.
+ * @brief Índice de leitura do buffer circular.
  *
  * Indica o próximo byte pendente de transmissão.
  */
@@ -25,6 +25,16 @@ static volatile uint16_t tx_tail = 0;
  * @brief Indica se existe uma transmissão USB em andamento.
  */
 static volatile bool is_transmitting = false;
+
+/**
+ * @brief Buffer estático temporário para transmissão USB.
+ *
+ * Diferentemente da versão anterior, em que o buffer temporário era
+ * alocado na pilha de USB_Comm_ProcessTx(), este buffer possui duração
+ * estática, permanecendo válido após o retorno da função enquanto
+ * a transmissão USB assíncrona estiver em andamento.
+ */
+static uint8_t temp_buf[64];
 
 /**
  * @brief Armazena o último pacote de configuração recebido do computador.
@@ -53,32 +63,50 @@ void USB_Comm_Init(void) {
  * @brief Adiciona dados à fila de transmissão USB.
  *
  * Insere os dados recebidos no buffer circular. Caso o espaço disponível
- * seja insuficiente, descarta os dados mais antigos até permitir a
- * inserção do novo conteúdo.
+ * seja insuficiente, descarta dados antigos antes de inserir o novo bloco.
  *
- * Antes de inserir os dados, tenta iniciar o envio de conteúdo pendente
- * quando não há uma transmissão em andamento.
+ * A manipulação dos índices e a inserção dos dados são protegidas por
+ * uma seção crítica. As interrupções são temporariamente desabilitadas
+ * para impedir que uma rotina executada por interrupção acesse ou altere
+ * os índices durante a operação, evitando condições de corrida e
+ * inconsistências no gerenciamento do buffer circular.
+ *
+ * Em relação à versão anterior, foram introduzidas as seguintes alterações:
+ * - Rejeição explícita de inserções com tamanho zero.
+ * - Proteção da manipulação dos índices e da inserção dos dados por
+ *   uma seção crítica, preservando o estado anterior das interrupções.
+ * - Descarte calculado em múltiplos do tamanho do novo bloco, em vez
+ *   do descarte da quantidade mínima de bytes necessária.
+ * - Remoção da chamada antecipada de USB_Comm_ProcessTx(), separando
+ *   a inserção dos dados do processamento da transmissão.
+ *
+ * O descarte em múltiplos do tamanho do bloco pressupõe alinhamento
+ * entre o índice de leitura e os limites dos pacotes. Essa condição
+ * não é garantida apenas pelo cálculo implementado.
  *
  * @param data Ponteiro para os dados que serão enfileirados.
  * @param len Quantidade de bytes a serem inseridos.
  *
  * @return true se os dados forem aceitos pela fila.
- * @return false se o tamanho solicitado for maior ou igual à capacidade
+ * @return false se o tamanho for zero ou maior ou igual à capacidade
  *         total do buffer circular.
  */
 bool USB_Comm_QueueTxData(const uint8_t *data, uint16_t len) {
-    if (len >= TX_RING_BUFFER_SIZE) return false;
+    if (len >= TX_RING_BUFFER_SIZE || len == 0) return false;
 
-    if (!is_transmitting) {
-        USB_Comm_ProcessTx();
-    }
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
 
     uint16_t free_space = (tx_tail <= tx_head) ?
                           (TX_RING_BUFFER_SIZE - tx_head + tx_tail - 1) :
                           (tx_tail - tx_head - 1);
 
     if (len > free_space) {
-        uint16_t bytes_to_discard = len - free_space;
+        uint16_t bytes_needed = len - free_space;
+        uint16_t packets_to_drop = (bytes_needed + len - 1) / len;
+        uint16_t bytes_to_discard = packets_to_drop * len;
+
+        /* Descarta em múltiplos do tamanho do bloco recebido. */
         tx_tail = (tx_tail + bytes_to_discard) % TX_RING_BUFFER_SIZE;
     }
 
@@ -87,43 +115,63 @@ bool USB_Comm_QueueTxData(const uint8_t *data, uint16_t len) {
         tx_head = (tx_head + 1) % TX_RING_BUFFER_SIZE;
     }
 
+    __set_PRIMASK(primask);
     return true;
 }
 
 /**
  * @brief Processa a fila de transmissão USB.
  *
- * Copia até 64 bytes do buffer circular para um buffer temporário
- * e solicita a transmissão por meio da interface USB CDC.
+ * Copia até 64 bytes do buffer circular para o buffer temporário
+ * estático e solicita a transmissão por meio da interface USB CDC.
  *
- * Utiliza um índice temporário de leitura para preservar os dados
- * na fila caso a solicitação de transmissão falhe. O índice oficial
- * de leitura é atualizado somente quando a interface aceita a solicitação.
+ * A verificação da fila, a cópia dos dados e a atualização da flag
+ * de transmissão são protegidas por uma seção crítica. As interrupções
+ * são temporariamente desabilitadas para impedir que outra rotina
+ * altere os índices durante a cópia, garantindo a consistência dos
+ * dados preparados para transmissão e evitando solicitações concorrentes.
  *
- * A função retorna imediatamente se a fila estiver vazia ou se já
- * existir uma transmissão em andamento.
+ * Em relação à versão anterior, o buffer temporário deixou de ser
+ * alocado na pilha e passou a ser estático, garantindo que sua memória
+ * permaneça válida durante a transmissão assíncrona.
+ *
+ * O índice de leitura é atualizado somente quando a interface USB
+ * aceita a solicitação de transmissão. Caso a solicitação falhe,
+ * os dados permanecem pendentes na fila.
+ *
+ * A chamada antecipada desta função foi removida de
+ * USB_Comm_QueueTxData(). Portanto, o processamento da fila deve
+ * ser acionado pelo fluxo principal do firmware.
  */
 void USB_Comm_ProcessTx(void) {
-    if (tx_head == tx_tail || is_transmitting) return;
+    if (is_transmitting) return;
 
-    uint8_t temp_buf[64];
     uint16_t bytes_to_send = 0;
 
-    uint16_t temp_tail = tx_tail;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
 
+    if (tx_head == tx_tail) {
+        __set_PRIMASK(primask);
+        return;
+    }
+
+    uint16_t temp_tail = tx_tail;
     while (temp_tail != tx_head && bytes_to_send < 64) {
         temp_buf[bytes_to_send++] = tx_buffer[temp_tail];
         temp_tail = (temp_tail + 1) % TX_RING_BUFFER_SIZE;
     }
 
-    if (bytes_to_send > 0) {
-        is_transmitting = true;
+    is_transmitting = true;
+    __set_PRIMASK(primask);
 
-        if (CDC_Transmit_HS(temp_buf, bytes_to_send) == USBD_OK) {
-            tx_tail = temp_tail;
-        } else {
-            is_transmitting = false;
-        }
+    if (CDC_Transmit_HS(temp_buf, bytes_to_send) == USBD_OK) {
+        uint32_t primask_tx = __get_PRIMASK();
+        __disable_irq();
+        tx_tail = temp_tail;
+        __set_PRIMASK(primask_tx);
+    } else {
+        is_transmitting = false;
     }
 }
 
@@ -134,8 +182,11 @@ void USB_Comm_ProcessTx(void) {
  * de um pacote de configuração e se o cabeçalho identifica uma
  * mensagem do tipo HEAD_CONFIG.
  *
- * Quando ambas as verificações são satisfeitas, copia o pacote para
- * a variável interna e sinaliza a disponibilidade de uma nova configuração.
+ * Quando ambas as condições são satisfeitas, copia o pacote para
+ * a estrutura interna e sinaliza a disponibilidade de uma nova
+ * configuração.
+ *
+ * Esta função mantém o mesmo comportamento da versão anterior.
  *
  * @param Buf Ponteiro para o buffer contendo os dados recebidos.
  * @param Len Ponteiro para o tamanho, em bytes, dos dados recebidos.
@@ -156,6 +207,7 @@ void USB_Comm_ReceiveCallback(uint8_t *Buf, uint32_t *Len) {
  *
  * Libera a flag de transmissão para permitir o início de um novo envio.
  *
+ * Esta função mantém o mesmo comportamento da versão anterior.
  * Deve ser chamada pelo callback de conclusão da transmissão USB.
  */
 void USB_Comm_TxCompleted(void) {
@@ -168,6 +220,8 @@ void USB_Comm_TxCompleted(void) {
  * Se houver uma configuração pendente, copia seus dados para a estrutura
  * fornecida pelo chamador e limpa a flag de disponibilidade.
  *
+ * Esta função mantém o mesmo comportamento da versão anterior.
+ *
  * @param config Ponteiro para a estrutura que receberá a configuração.
  *
  * @return true se uma nova configuração foi copiada.
@@ -179,6 +233,5 @@ bool USB_Comm_GetNewConfig(Protocol_ConfigPacket_t *config) {
         new_config_received = false;
         return true;
     }
-
     return false;
 }
