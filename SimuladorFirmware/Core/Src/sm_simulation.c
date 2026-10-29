@@ -54,7 +54,7 @@ static void __config_hardware_freqs(void) {
     float f_sim = fs * (float)n;
 
     uint32_t arr_sim = (uint32_t)(timer_clock / f_sim) - 1;
-    uint32_t arr_fs  = (uint32_t)(timer_clock / ((fs*4) + 1)) - 1;
+    uint32_t arr_fs  = (uint32_t)(timer_clock / ((fs*8) + 1)) - 1;
 
     __HAL_TIM_SET_AUTORELOAD(&htim1, arr_sim);
     __HAL_TIM_SET_AUTORELOAD(&htim2, arr_fs);
