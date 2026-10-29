@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include "comm_protocol.h"
 
-#define TX_RING_BUFFER_SIZE 2048
+#define TX_RING_BUFFER_SIZE 8192
 
 void USB_Comm_Init(void); // Iniciar a comunicação USB
 bool USB_Comm_QueueTxData(const uint8_t *data, uint16_t len); // Colocar dados na fila de transmissão

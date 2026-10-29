@@ -8,19 +8,6 @@ extern TIM_HandleTypeDef htim2;
 extern DAC_HandleTypeDef hdac1;
 
 /**
- * @brief Buffer utilizado pelo DMA para atualizar a saída do DAC.
- */
-volatile uint16_t dma_dac_buffer = 0;
-
-/**
- * @brief Estado lógico da chave do conversor Buck.
- *
- * Utilizado como fator multiplicativo dos coeficientes de entrada
- * do modelo discreto.
- */
-static volatile float switch_state = 0.0f;
-
-/**
  * @brief Estado atual da máquina de estados da simulação.
  */
 static volatile SimState_t current_state = AGUARDA_CONFIG;
@@ -51,9 +38,10 @@ static volatile float vC_val = 0.0f;
  * Calcula os valores de recarga dos temporizadores com base na
  * frequência de chaveamento e no fator de sobreamostragem.
  *
- * O TIM1 opera na frequência de simulação, enquanto o TIM2 opera
- * na frequência de chaveamento, utilizada para a atualização do
- * DAC e o envio da telemetria.
+ * O TIM1 opera na frequência de simulação, responsável pela
+ * atualização dos estados do modelo discreto. O TIM2 opera na
+ * frequência definida para a atualização da saída analógica e
+ * o envio da telemetria.
  *
  * O cálculo pressupõe prescaler igual a zero e utiliza
  * SystemCoreClock como frequência de entrada dos temporizadores.
@@ -66,7 +54,7 @@ static void __config_hardware_freqs(void) {
     float f_sim = fs * (float)n;
 
     uint32_t arr_sim = (uint32_t)(timer_clock / f_sim) - 1;
-    uint32_t arr_fs  = (uint32_t)(timer_clock / ((fs*2) + 1)) - 1;
+    uint32_t arr_fs  = (uint32_t)(timer_clock / ((fs*4) + 1)) - 1;
 
     __HAL_TIM_SET_AUTORELOAD(&htim1, arr_sim);
     __HAL_TIM_SET_AUTORELOAD(&htim2, arr_fs);
@@ -78,24 +66,31 @@ static void __config_hardware_freqs(void) {
 /**
  * @brief Interrompe os periféricos utilizados na simulação.
  *
- * Desabilita as interrupções dos temporizadores e interrompe
- * a transferência de dados para o DAC via DMA.
+ * Desabilita as interrupções dos temporizadores e desativa o canal
+ * do DAC utilizado para representar a tensão do capacitor.
  */
 static void __stop_sim_hardware(void) {
     HAL_TIM_Base_Stop_IT(&htim1);
     HAL_TIM_Base_Stop_IT(&htim2);
-    HAL_DAC_Stop_DMA(&hdac1, DAC_CHANNEL_1);
+    HAL_DAC_Stop(&hdac1, DAC_CHANNEL_1);
 }
 
 /**
  * @brief Inicializa os periféricos necessários para a simulação.
  *
- * Inicia a transferência via DMA para o DAC, habilita o temporizador
- * responsável pela telemetria e pela atualização do DAC e inicia
- * o temporizador responsável pelos cálculos do modelo.
+ * Habilita o canal do DAC para permitir a atualização da saída
+ * analógica por meio de escritas diretas no registrador de dados,
+ * realizadas pela função HAL_DAC_SetValue().
+ *
+ * Inicia o TIM2, responsável pela atualização da saída analógica
+ * e pelo envio da telemetria, e o TIM1, responsável pelos cálculos
+ * do modelo discreto do conversor.
+ *
+ * A transferência de dados para o DAC é realizada pela CPU,
+ * sem utilização de DMA.
  */
 static void __start_sim_hardware(void) {
-    HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)&dma_dac_buffer, 1, DAC_ALIGN_12B_R);
+    HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
     HAL_TIM_Base_Start_IT(&htim2);
     HAL_TIM_Base_Start_IT(&htim1);
 }
@@ -126,11 +121,13 @@ void SM_Init(void) {
  *
  * No estado AGUARDA_CONFIG, aguarda o recebimento dos parâmetros
  * de configuração. No estado CONFIG_SIM, valida os parâmetros e
- * configura os periféricos. No estado EXEC_SIM, verifica se o
- * número de passos configurado foi atingido.
+ * configura os temporizadores e os estados iniciais do modelo.
+ * No estado EXEC_SIM, verifica se o número de passos configurado
+ * foi atingido.
  *
- * Os cálculos do modelo são executados na interrupção do temporizador
- * dedicado à atualização dos estados do conversor.
+ * Os cálculos do modelo são executados na interrupção do TIM1.
+ * A atualização da saída analógica é realizada por escrita direta
+ * no DAC durante a execução do passo do modelo.
  */
 void SM_Process(void) {
     switch(current_state) {
@@ -148,8 +145,6 @@ void SM_Process(void) {
                 k = 0;
                 iL_val = 0.0f;
                 vC_val = 0.0f;
-                dma_dac_buffer = 0;
-                switch_state = 0.0f;
 
                 __send_header_only(HEAD_CONFIG_SUCCESS);
                 current_state = EXEC_SIM;
@@ -180,8 +175,12 @@ void SM_Process(void) {
  * Atualiza a corrente no indutor e a tensão no capacitor utilizando
  * as equações de estado discretizadas recebidas na configuração.
  *
- * Converte a tensão do capacitor para uma representação digital
- * de 12 bits e atualiza o buffer utilizado pelo DMA do DAC.
+ * A contribuição dos coeficientes de entrada é determinada pelo
+ * estado lógico da chave, lido diretamente do pino PA0.
+ *
+ * Após atualizar os estados do modelo, converte a tensão do
+ * capacitor para um código digital de 12 bits e escreve o valor
+ * diretamente no DAC por meio de HAL_DAC_SetValue(), sem DMA.
  *
  * Deve ser chamada pela interrupção do temporizador configurado
  * para operar na frequência de simulação.
@@ -189,22 +188,30 @@ void SM_Process(void) {
 void SM_Timer_MathStep_ISR(void) {
     if (current_state != EXEC_SIM || k >= cfg.total_steps) return;
 
-    // switch_state = 1.0f para testar com PWM sempre ligado
-    switch_state = 1.0f; // ((GPIOA->IDR & GPIO_PIN_0) != 0) ? 1.0f : 0.0f; 
+    // Calcula a parcela constante da equação (que não depende do PWM)
+    float new_iL = (cfg.Ad_00 * iL_val) + (cfg.Ad_01 * vC_val);
+    float new_vC = (cfg.Ad_10 * iL_val) + (cfg.Ad_11 * vC_val);
 
-    float new_iL = (cfg.Ad_00 * iL_val) + (cfg.Ad_01 * vC_val) + (cfg.Bd1_0 * switch_state);
-    float new_vC = (cfg.Ad_10 * iL_val) + (cfg.Ad_11 * vC_val) + (cfg.Bd1_1 * switch_state);
+    // Avalia o estado físico da chave (pino PA0)
+    if ((GPIOA->IDR & GPIO_PIN_0) != 0) {
+        // Chave fechada (1): soma os coeficientes de entrada
+        new_iL += cfg.Bd1_0;
+        new_vC += cfg.Bd1_1;
+    }
 
+    // Atualiza os estados
     iL_val = new_iL;
     vC_val = new_vC;
 
+    // Converte a tensão calculada para o DAC (0 a 4095)
     float dac_float = (vC_val / cfg.vO_max) * 4095.0f;
 
+    // Saturação (Clamp) para evitar overflow no DAC
     if (dac_float < 0.0f) dac_float = 0.0f;
     else if (dac_float > 4095.0f) dac_float = 4095.0f;
 
-    dma_dac_buffer = (uint16_t)dac_float;
-
+    // Atualiza diretamente o registrador de dados do DAC
+    HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (uint32_t)dac_float);
     k++;
 }
 
