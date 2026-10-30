@@ -47,21 +47,25 @@ static volatile float vC_val = 0.0f;
  * SystemCoreClock como frequência de entrada dos temporizadores.
  */
 static void __config_hardware_freqs(void) {
-    uint32_t timer_clock = SystemCoreClock;
+    uint32_t pclk1 = HAL_RCC_GetPCLK1Freq(); // Barramento do TIM2 (APB1)
+    uint32_t pclk2 = HAL_RCC_GetPCLK2Freq(); // Barramento do TIM1 (APB2)
+    uint32_t tim2_clock = pclk1 * 2; // TIM2 está no APB1, que tem um multiplicador de 2
+    uint32_t tim1_clock = pclk2 * 2; // TIM1 está no APB2, que tem um multiplicador de 2
 
     float fs = cfg.fs;
     uint32_t n = cfg.n;
     float f_sim = fs * (float)n;
 
-    uint32_t arr_sim = (uint32_t)(timer_clock / f_sim) - 1;
-    uint32_t arr_fs  = (uint32_t)(timer_clock / ((fs*8) + 1)) - 1;
+    uint32_t arr_sim = (uint32_t)(tim1_clock / f_sim) - 1;
+    uint32_t arr_fs  = (uint32_t)(tim2_clock / ((fs * 2) + 1)) - 1;
 
     __HAL_TIM_SET_AUTORELOAD(&htim1, arr_sim);
     __HAL_TIM_SET_AUTORELOAD(&htim2, arr_fs);
 
     __HAL_TIM_SET_COUNTER(&htim1, 0);
-    __HAL_TIM_SET_COUNTER(&htim2, 0);
+    __HAL_TIM_SET_COUNTER(&htim2, 0);  
 }
+
 
 /**
  * @brief Interrompe os periféricos utilizados na simulação.
