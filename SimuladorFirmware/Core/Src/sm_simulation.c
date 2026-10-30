@@ -52,12 +52,11 @@ static void __config_hardware_freqs(void) {
     uint32_t tim2_clock = pclk1 * 2; // TIM2 está no APB1, que tem um multiplicador de 2
     uint32_t tim1_clock = pclk2 * 2; // TIM1 está no APB2, que tem um multiplicador de 2
 
-    float fs = cfg.fs;
-    uint32_t n = cfg.n;
-    float f_sim = fs * (float)n;
+    float f_tel = cfg.fs * 2;
+    float f_sim = cfg.fs * (float)cfg.n;
 
     uint32_t arr_sim = (uint32_t)(tim1_clock / f_sim) - 1;
-    uint32_t arr_fs  = (uint32_t)(tim2_clock / ((fs * 2) + 1)) - 1;
+    uint32_t arr_fs  = (uint32_t)(tim2_clock / f_tel) - 1;
 
     __HAL_TIM_SET_AUTORELOAD(&htim1, arr_sim);
     __HAL_TIM_SET_AUTORELOAD(&htim2, arr_fs);
@@ -191,7 +190,7 @@ void SM_Process(void) {
  */
 void SM_Timer_MathStep_ISR(void) {
     if (current_state != EXEC_SIM || k >= cfg.total_steps) return;
-
+    
     // Calcula a parcela constante da equação (que não depende do PWM)
     float new_iL = (cfg.Ad_00 * iL_val) + (cfg.Ad_01 * vC_val);
     float new_vC = (cfg.Ad_10 * iL_val) + (cfg.Ad_11 * vC_val);
