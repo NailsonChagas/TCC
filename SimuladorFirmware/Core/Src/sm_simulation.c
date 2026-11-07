@@ -7,14 +7,6 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern DAC_HandleTypeDef hdac1;
 
-static float x_k1 = 0.0f, x_k2 = 0.0f; // Histórico de entradas: x[k-1], x[k-2]
-static float y_k1 = 0.0f, y_k2 = 0.0f; // Histórico de saídas: y[k-1], y[k-2]
-const float b0 =     0.0000098164915805f;
-const float b1 =     0.0000196329831611f;
-const float b2 =     0.0000098164915805f;
-const float a1 =    -1.9891377288280632f;
-const float a2 =     0.9891769947943853f;
-
 /**
  * @brief Estado atual da máquina de estados da simulação.
  */
@@ -156,10 +148,6 @@ void SM_Process(void) {
                 k = 0;
                 iL_val = 0.0f;
                 vC_val = 0.0f;
-                x_k1 = 0.0f;
-                x_k2 = 0.0f;
-                y_k1 = 0.0f; 
-                y_k2 = 0.0f; 
 
                 __send_header_only(HEAD_CONFIG_SUCCESS);
                 current_state = EXEC_SIM;
@@ -217,13 +205,6 @@ void SM_Timer_MathStep_ISR(void) {
     // Atualiza os estados
     iL_val = new_iL;
     vC_val = new_vC;
-
-    // float x_k = vC_val;
-    // float vC_filtered = (b0 * x_k) + (b1 * x_k1) + (b2 * x_k2) - (a1 * y_k1) - (a2 * y_k2);
-    // x_k2 = x_k1;
-    // x_k1 = x_k;
-    // y_k2 = y_k1;
-    // y_k1 = vC_filtered;
 
     // Converte a tensão calculada para o DAC (0 a 4095)
     float dac_float = (vC_val / cfg.vO_max) * 4095.0f;
