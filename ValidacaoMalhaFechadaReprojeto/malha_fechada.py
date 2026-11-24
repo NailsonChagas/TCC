@@ -162,7 +162,7 @@ def plot_errors_vs_n(df):
     
     ax.set_xticks([1, 10, 100, 1000, 10000])
     
-    plt.xlabel('Fator Multiplicador (n)', fontsize=FONT_LABEL)
+    plt.xlabel('Fator n', fontsize=FONT_LABEL)
     plt.ylabel('Erro (%)', fontsize=FONT_LABEL)
     plt.grid(True, which="both", ls="--", alpha=0.6)
     plt.legend(fontsize=FONT_LEGEND)
